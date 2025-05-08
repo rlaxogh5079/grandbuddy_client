@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:grandbuddy_client/utils/secure_storage.dart';
-import 'package:grandbuddy_client/ui/pages/login.dart';
+import 'package:grandbuddy_client/ui/pages/auth.dart';
 import 'package:grandbuddy_client/ui/pages/home.dart';
+import 'package:grandbuddy_client/ui/pages/match_create.dart';
 
 void main() {
   runApp(const GBApp());
@@ -48,7 +49,7 @@ class _GBMainPageState extends State<GBMainPage> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             if (snapshot.data != "true") {
-              return GBLoginPage();
+              return GBAuthPage();
             } else {
               return GBHomePage();
             }
