@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
-import 'package:grandbuddy_client/utils/secure_storage.dart';
 import 'package:grandbuddy_client/ui/pages/auth.dart';
-import 'package:grandbuddy_client/ui/pages/home.dart';
-import 'package:grandbuddy_client/ui/pages/match_create.dart';
 
 void main() {
   runApp(const GBApp());
@@ -43,31 +40,6 @@ class GBMainPage extends StatefulWidget {
 class _GBMainPageState extends State<GBMainPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: FutureBuilder(
-        future: SecureStorage().storage.read(key: "auto_login"),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            if (snapshot.data != "true") {
-              return GBAuthPage();
-            } else {
-              return GBHomePage();
-            }
-          } else {
-            return Center(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('로그인 정보 확인중...'),
-                  SizedBox(height: 16.sp),
-                  const CircularProgressIndicator(),
-                ],
-              ),
-            );
-          }
-        },
-      ),
-    );
+    return Scaffold(body: GBAuthPage());
   }
 }

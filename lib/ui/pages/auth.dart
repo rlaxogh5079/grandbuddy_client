@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:grandbuddy_client/ui/dialog/dialog.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:grandbuddy_client/utils/form_checker.dart';
+import 'package:grandbuddy_client/utils/model/response.dart';
+import 'package:grandbuddy_client/utils/requester.dart';
+import 'package:grandbuddy_client/utils/secure_storage.dart';
+import 'package:grandbuddy_client/ui/pages/home.dart';
 
 class GBAuthPage extends StatefulWidget {
   const GBAuthPage({super.key});
@@ -26,6 +31,7 @@ class _GBAuthPageState extends State<GBAuthPage> {
   final TextEditingController roleController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController profileController = TextEditingController();
+  int roleValue = 0;
 
   void toggleMode() {
     setState(() {
@@ -120,8 +126,59 @@ class _GBAuthPageState extends State<GBAuthPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            onPressed: () {
-              _formKey.currentState!.validate();
+            onPressed: () async {
+              if (_formKey.currentState!.validate()) {
+                ResponseWithAccessToken result = await login(
+                  loginUserIdController.text,
+                  loginPasswordController.text,
+                );
+                String resultTitle = "";
+                String resultContent = "";
+                String token = "";
+                bool success = false;
+                switch (result.statusCode) {
+                  case 200:
+                    success = true;
+                    resultTitle = "로그인 성공";
+                    resultContent = result.message;
+                    token = result.token!.accessToken;
+                    break;
+                  case 404:
+                    resultTitle = "로그인 실패";
+                    resultContent = result.message;
+                    break;
+                  case 422:
+                    resultTitle = "데이터 전송 오류";
+                    resultContent = result.message;
+                    break;
+                  case 500:
+                    resultTitle = "서버 내부 오류";
+                    resultContent = result.message;
+                    break;
+                }
+                if (success) {
+                  await SecureStorage().storage.write(
+                    key: "access_token",
+                    value: token,
+                  );
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => GBHomePage()),
+                  );
+                } else {
+                  createSmoothDialog(
+                    context,
+                    resultTitle,
+                    Text(resultContent),
+                    TextButton(
+                      child: Text("닫기"),
+                      onPressed: () async {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  );
+                }
+              }
             },
             child: const Text("로그인", style: TextStyle(color: Colors.white)),
           ),
@@ -281,6 +338,7 @@ class _GBAuthPageState extends State<GBAuthPage> {
               onChanged: (value) {
                 if (value != null) {
                   roleController.text = value.toString();
+                  roleValue = value;
                 }
               },
             ),
@@ -304,8 +362,58 @@ class _GBAuthPageState extends State<GBAuthPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            onPressed: () {
-              // 최종 유효성 검증 추가 가능
+            onPressed: () async {
+              if (_formKey.currentState!.validate()) {
+                GeneralResponse result = await register(
+                  userIdController.text,
+                  passwordController.text,
+                  nicknameController.text,
+                  emailController.text,
+                  phoneController.text.replaceAll("-", ""),
+                  birthdayController.text,
+                  roleValue,
+                  addressController.text,
+                  profileController.text,
+                );
+                String resultTitle = "";
+                String resultContent = "";
+                bool success = false;
+                switch (result.statusCode) {
+                  case 201:
+                    success = true;
+                    resultTitle = "회원가입 성공";
+                    resultContent = result.message;
+                    break;
+                  case 409:
+                    resultTitle = "중복된 데이터";
+                    resultContent = result.message;
+                    break;
+                  case 422:
+                    resultTitle = "데이터 전송 오류";
+                    resultContent = result.message;
+                    break;
+                  case 500:
+                    resultTitle = "서버 내부 오류";
+                    resultContent = result.message;
+                    break;
+                }
+                createSmoothDialog(
+                  context,
+                  resultTitle,
+                  Text(resultContent),
+                  TextButton(
+                    child: Text("닫기"),
+                    onPressed: () async {
+                      Navigator.pop(context);
+                    },
+                  ),
+                );
+                if (success) {
+                  setState(() {
+                    isLogin = true;
+                  });
+                }
+              }
             },
             child: const Text("회원가입", style: TextStyle(color: Colors.white)),
           ),
