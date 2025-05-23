@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'model/response.dart';
 
-const String host = "http://172.26.224.1:8000";
+const String host = "http://203.250.133.23:8000";
 
 Future<ResponseWithAccessToken> login(String userID, String password) async {
   Map data = {"user_id": userID, "password": password};
@@ -81,4 +81,23 @@ Future<ProfileResponse> getUserByUuid(String uuid) async {
 
   String responseBody = utf8.decoder.convert(response.bodyBytes);
   return ProfileResponse.fromJson(json.decode(responseBody));
+}
+
+Future<RequestResponse> createRequest(
+  String accessToken,
+  String title,
+  String description,
+) async {
+  Map data = {"title": title, "description": description};
+  http.Response response = await http.post(
+    Uri.parse("$host/request"),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $accessToken",
+    },
+    body: jsonEncode(data),
+  );
+
+  String responseBody = utf8.decoder.convert(response.bodyBytes);
+  return RequestResponse.fromJson(json.decode(responseBody));
 }

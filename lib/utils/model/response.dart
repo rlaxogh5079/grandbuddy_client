@@ -168,6 +168,32 @@ class Request {
   }
 }
 
+class RequestResponse {
+  final String message;
+  final int statusCode;
+  String? detail;
+  Request? request;
+
+  RequestResponse({
+    required this.message,
+    required this.statusCode,
+    this.detail = null,
+    this.request = null,
+  });
+
+  factory RequestResponse.fromJson(Map<String, dynamic> json) {
+    return RequestResponse(
+      message: json["message"] as String,
+      statusCode: json["status_code"] as int,
+      detail: json["detail"] != null ? json["detail"] as String : null,
+      request:
+          json["request"] != null
+              ? Request.fromJson(json["request"] as Map<String, dynamic>)
+              : null,
+    );
+  }
+}
+
 class RequestListResponse {
   final String message;
   final int statusCode;

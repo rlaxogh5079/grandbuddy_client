@@ -1,7 +1,12 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:grandbuddy_client/utils/model/response.dart';
+import 'package:grandbuddy_client/utils/requester.dart';
 
+// 다이얼로그 함수
 void createSmoothDialog(
   dynamic context,
   String title,
@@ -28,6 +33,7 @@ void createSmoothDialog(
   );
 }
 
+// 다이얼로그 화면 구성
 class _DynamicDialog extends StatefulWidget {
   var leadingIcon;
   var title;
@@ -75,4 +81,75 @@ class _DynamicDialogState extends State<_DynamicDialog> {
       ),
     );
   }
+}
+
+// + 버튼 눌렀을 때 나타나는 요청 폼 다이얼로그
+void showAddRequestDialog(
+  BuildContext context,
+  String accessToken,
+  Function refreshState,
+) {
+  TextEditingController titleController = TextEditingController();
+  TextEditingController descriptionController = TextEditingController();
+
+  createSmoothDialog(
+    context,
+    "할 일 요청",
+    Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextField(
+          controller: titleController,
+          decoration: InputDecoration(
+            labelText: '제목',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: 16.0),
+        TextField(
+          controller: descriptionController,
+          decoration: InputDecoration(
+            labelText: '설명',
+            border: OutlineInputBorder(),
+            floatingLabelAlignment: FloatingLabelAlignment.start,
+            labelStyle: TextStyle(),
+          ),
+          maxLines: 4,
+        ),
+        SizedBox(height: 16.0),
+      ],
+    ),
+    Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        ElevatedButton(
+          onPressed: () async {
+            String title = titleController.text;
+            String description = descriptionController.text;
+
+            if (title.isEmpty || description.isEmpty) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('두 가지 항목 다 입력해주세요.')));
+            } else {
+              RequestResponse response = await createRequest(
+                accessToken,
+                title,
+                description,
+              );
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(response.message),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+              Navigator.of(context).pop();
+              refreshState();
+            }
+          },
+          child: Text('요청하기'),
+        ),
+      ],
+    ),
+  );
 }
