@@ -1,15 +1,15 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'model/response.dart';
+import 'package:grandbuddy_client/utils/res/user.dart';
 
-const String host = "http://203.250.133.23:8000";
+const String host = "http://172.17.162.46:8000/user";
 
 Future<ResponseWithAccessToken> login(String userID, String password) async {
   Map data = {"user_id": userID, "password": password};
 
   http.Response response = await http.post(
-    Uri.parse("$host/user/auth/login"),
+    Uri.parse("$host/auth/login"),
     headers: {"Content-Type": "application/json"},
     body: jsonEncode(data),
   );
@@ -42,7 +42,7 @@ Future<GeneralResponse> register(
   };
 
   http.Response response = await http.post(
-    Uri.parse("$host/user"),
+    Uri.parse("$host/"),
     headers: {"Content-Type": "application/json"},
     body: jsonEncode(data),
   );
@@ -52,7 +52,7 @@ Future<GeneralResponse> register(
 
 Future<ProfileResponse> getProfile(String accessToken) async {
   http.Response response = await http.get(
-    Uri.parse("$host/user"),
+    Uri.parse("$host/"),
     headers: {
       "Content-Type": "application/json",
       "Authorization": "Bearer $accessToken",
@@ -61,43 +61,14 @@ Future<ProfileResponse> getProfile(String accessToken) async {
 
   String responseBody = utf8.decoder.convert(response.bodyBytes);
   return ProfileResponse.fromJson(json.decode(responseBody));
-}
-
-Future<RequestListResponse> getRequestExplore() async {
-  http.Response response = await http.get(
-    Uri.parse("$host/request/explore/all"),
-    headers: {"Content-Type": "application/json"},
-  );
-
-  String responseBody = utf8.decoder.convert(response.bodyBytes);
-  return RequestListResponse.fromJson(json.decode(responseBody));
 }
 
 Future<ProfileResponse> getUserByUuid(String uuid) async {
   final response = await http.get(
-    Uri.parse("$host/user/$uuid"),
+    Uri.parse("$host/$uuid"),
     headers: {"Content-Type": "application/json"},
   );
 
   String responseBody = utf8.decoder.convert(response.bodyBytes);
   return ProfileResponse.fromJson(json.decode(responseBody));
-}
-
-Future<RequestResponse> createRequest(
-  String accessToken,
-  String title,
-  String description,
-) async {
-  Map data = {"title": title, "description": description};
-  http.Response response = await http.post(
-    Uri.parse("$host/request"),
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $accessToken",
-    },
-    body: jsonEncode(data),
-  );
-
-  String responseBody = utf8.decoder.convert(response.bodyBytes);
-  return RequestResponse.fromJson(json.decode(responseBody));
 }

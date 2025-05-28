@@ -3,8 +3,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:grandbuddy_client/ui/dialog/dialog.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:grandbuddy_client/utils/form_checker.dart';
-import 'package:grandbuddy_client/utils/model/response.dart';
-import 'package:grandbuddy_client/utils/requester.dart';
+import 'package:grandbuddy_client/utils/res/user.dart';
+import 'package:grandbuddy_client/utils/req/user.dart';
 import 'package:grandbuddy_client/utils/secure_storage.dart';
 import 'package:grandbuddy_client/ui/pages/home.dart';
 
@@ -171,7 +171,10 @@ class _GBAuthPageState extends State<GBAuthPage> {
                     resultTitle,
                     Text(resultContent),
                     TextButton(
-                      child: Text("닫기"),
+                      child: Text(
+                        "닫기",
+                        style: TextStyle(color: const Color(0xFF5B8FB4)),
+                      ),
                       onPressed: () async {
                         Navigator.pop(context);
                       },
@@ -402,7 +405,10 @@ class _GBAuthPageState extends State<GBAuthPage> {
                   resultTitle,
                   Text(resultContent),
                   TextButton(
-                    child: Text("닫기"),
+                    child: Text(
+                      "닫기",
+                      style: TextStyle(color: const Color(0xFF5B8FB4)),
+                    ),
                     onPressed: () async {
                       Navigator.pop(context);
                     },

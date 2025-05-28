@@ -1,10 +1,8 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:grandbuddy_client/utils/model/response.dart';
-import 'package:grandbuddy_client/utils/requester.dart';
+import 'package:grandbuddy_client/utils/res/request.dart';
+import 'package:grandbuddy_client/utils/req/request.dart';
 
 // 다이얼로그 함수
 void createSmoothDialog(
@@ -34,6 +32,7 @@ void createSmoothDialog(
 }
 
 // 다이얼로그 화면 구성
+// ignore: must_be_immutable
 class _DynamicDialog extends StatefulWidget {
   var leadingIcon;
   var title;

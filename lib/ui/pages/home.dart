@@ -4,9 +4,10 @@ import 'package:grandbuddy_client/ui/dialog/dialog.dart';
 import 'package:grandbuddy_client/ui/pages/request_detail.dart';
 import 'package:grandbuddy_client/utils/secure_storage.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
-import 'package:grandbuddy_client/utils/model/response.dart';
-import 'package:grandbuddy_client/utils/requester.dart';
-import 'package:grandbuddy_client/utils/extensions/role_extension.dart';
+import 'package:grandbuddy_client/utils/res/user.dart';
+import 'package:grandbuddy_client/utils/res/request.dart';
+import 'package:grandbuddy_client/utils/req/user.dart';
+import 'package:grandbuddy_client/utils/req/request.dart';
 
 // 상태별 색상 매핑 함수
 Color getStatusColor(String status) {
@@ -60,7 +61,7 @@ class _GBHomePageState extends State<GBHomePage> {
     setState(() {
       userID = profile.user!.userID;
       role = profile.user!.role;
-      userUuid = profile.user!.userUuid ?? ""; // 빈 문자열을 기본값으로 설정
+      userUuid = profile.user!.userUuid; // 빈 문자열을 기본값으로 설정
       accessToken = token;
     });
   }
@@ -197,7 +198,7 @@ class _GBHomePageState extends State<GBHomePage> {
                                   CircleAvatar(
                                     radius: 16.sp,
                                     backgroundImage: NetworkImage(
-                                      senior.profile,
+                                      "http://172.17.162.46:8000${senior.profile}",
                                     ),
                                   ),
                                   SizedBox(width: 3.w),
