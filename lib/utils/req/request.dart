@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:grandbuddy_client/utils/res/request.dart';
 
-const String host = "http://172.17.162.46:8000/request";
+const String host = "http://192.168.219.102:8000/request";
 
 Future<RequestListResponse> getRequestExplore() async {
   http.Response response = await http.get(
@@ -28,6 +28,16 @@ Future<RequestResponse> createRequest(
       "Authorization": "Bearer $accessToken",
     },
     body: jsonEncode(data),
+  );
+
+  String responseBody = utf8.decoder.convert(response.bodyBytes);
+  return RequestResponse.fromJson(json.decode(responseBody));
+}
+
+Future<RequestResponse> getRequestByUuid(String requestUuid) async {
+  http.Response response = await http.get(
+    Uri.parse("$host/$requestUuid"),
+    headers: {"Content-Type": "application/json"},
   );
 
   String responseBody = utf8.decoder.convert(response.bodyBytes);

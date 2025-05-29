@@ -8,20 +8,21 @@ import 'package:grandbuddy_client/utils/res/user.dart';
 import 'package:grandbuddy_client/utils/res/request.dart';
 import 'package:grandbuddy_client/utils/req/user.dart';
 import 'package:grandbuddy_client/utils/req/request.dart';
+import 'package:grandbuddy_client/ui/widgets/drawer.dart'; // 추가
 
 // 상태별 색상 매핑 함수
 Color getStatusColor(String status) {
   switch (status) {
     case "pending":
-      return Colors.orange;
+      return Colors.grey;
     case "accepted":
-      return Colors.blue;
-    case "completed":
       return Colors.green;
+    case "completed":
+      return Colors.blue;
     case "canceld":
       return Colors.red;
     default:
-      return Colors.grey;
+      return Colors.white;
   }
 }
 
@@ -40,7 +41,7 @@ class _GBHomePageState extends State<GBHomePage> {
   List<Request> requests = [];
   Map<String, User> seniorMap = {}; // seniorUuid → User 매핑
   String accessToken = '';
-
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   @override
   void initState() {
     super.initState();
@@ -91,6 +92,8 @@ class _GBHomePageState extends State<GBHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: CustomDrawer(userID: userID),
       appBar: AppBar(
         backgroundColor: const Color(0xFF7BAFD4),
         title: Center(
@@ -99,12 +102,15 @@ class _GBHomePageState extends State<GBHomePage> {
             style: TextStyle(color: Colors.white, fontSize: 17.sp),
           ),
         ),
+
         leading: Padding(
           padding: EdgeInsets.only(left: 5.w),
           child: IconButton(
             icon: const Icon(FontAwesomeIcons.bars),
             color: Colors.white,
-            onPressed: () {},
+            onPressed: () {
+              _scaffoldKey.currentState!.openDrawer();
+            },
           ),
         ),
         actions: [
@@ -125,18 +131,20 @@ class _GBHomePageState extends State<GBHomePage> {
                   final senior = seniorMap[request.seniorUuid];
 
                   return GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       // Card 클릭 시 상세 페이지로 이동
-                      Navigator.push(
+                      bool? result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) => RequestDetailPage(
-                                request: request,
-                                senior: senior,
-                              ),
+                              (context) => RequestDetailPage(request: request),
                         ),
                       );
+
+                      if (result == true) {
+                        requests = [];
+                        _loadRequestList();
+                      }
                     },
                     child: Card(
                       margin: EdgeInsets.symmetric(
@@ -198,7 +206,7 @@ class _GBHomePageState extends State<GBHomePage> {
                                   CircleAvatar(
                                     radius: 16.sp,
                                     backgroundImage: NetworkImage(
-                                      "http://172.17.162.46:8000${senior.profile}",
+                                      "http://192.168.219.102:8000${senior.profile}",
                                     ),
                                   ),
                                   SizedBox(width: 3.w),
@@ -238,7 +246,6 @@ class _GBHomePageState extends State<GBHomePage> {
                 padding: EdgeInsets.only(right: 5.w),
                 child: FloatingActionButton(
                   onPressed: () async {
-                    print('accessToken: $accessToken');
                     showAddRequestDialog(
                       context,
                       accessToken,

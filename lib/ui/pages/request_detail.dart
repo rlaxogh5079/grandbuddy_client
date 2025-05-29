@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:grandbuddy_client/utils/req/user.dart';
+import 'package:grandbuddy_client/utils/res/general.dart';
 import 'package:grandbuddy_client/utils/res/request.dart';
 import 'package:grandbuddy_client/utils/res/user.dart';
 import 'package:grandbuddy_client/utils/res/match.dart';
@@ -10,24 +12,29 @@ import 'package:grandbuddy_client/ui/dialog/dialog.dart';
 Color getStatusColor(String status) {
   switch (status) {
     case "pending":
-      return Colors.orange;
+      return Colors.grey;
     case "accepted":
-      return Colors.blue;
-    case "completed":
       return Colors.green;
+    case "completed":
+      return Colors.blue;
     case "canceld":
       return Colors.red;
     default:
-      return Colors.grey;
+      return Colors.white;
   }
 }
 
 class RequestDetailPage extends StatefulWidget {
   final Request request;
-  final User? senior;
+  final bool isAccepted;
+  final String matchUuid;
 
-  const RequestDetailPage({Key? key, required this.request, this.senior})
-    : super(key: key);
+  const RequestDetailPage({
+    Key? key,
+    required this.request,
+    this.isAccepted = false,
+    this.matchUuid = '',
+  }) : super(key: key);
 
   @override
   State<RequestDetailPage> createState() => _RequestDetailPageState();
@@ -35,10 +42,9 @@ class RequestDetailPage extends StatefulWidget {
 
 class _RequestDetailPageState extends State<RequestDetailPage> {
   bool? buttonAble = null;
-  late String baseAddress = widget.senior!.address.split("(")[0];
-  late String specificAddress = widget.senior!.address
-      .split("(")[1]
-      .replaceAll(")", "");
+  late User? senior = null;
+  late String baseAddress;
+  late String specificAddress;
 
   Future<void> _fetchButtonAble() async {
     String accessToken =
@@ -57,10 +63,22 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
     });
   }
 
+  Future<void> _fetchUser() async {
+    ProfileResponse result = await getUserByUuid(widget.request.seniorUuid);
+    if (result.statusCode == 200) {
+      setState(() {
+        senior = result.user;
+        baseAddress = senior!.address.split("(")[0];
+        specificAddress = senior!.address.split("(")[1].replaceAll(")", "");
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _fetchButtonAble();
+    _fetchUser();
   }
 
   @override
@@ -81,13 +99,13 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 노인 정보 표시 (senior)
-            if (widget.senior != null)
+            if (senior != null)
               Row(
                 children: [
                   CircleAvatar(
                     radius: 24.sp,
                     backgroundImage: NetworkImage(
-                      "http://172.17.162.46:8000${widget.senior!.profile}",
+                      "http://192.168.219.102:8000${senior!.profile}",
                     ),
                   ),
                   SizedBox(width: 3.w),
@@ -95,7 +113,7 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.senior!.nickname,
+                        senior!.nickname,
                         style: TextStyle(
                           fontSize: 20.sp,
                           fontWeight: FontWeight.w500,
@@ -164,90 +182,174 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
             Expanded(
               child: Align(
                 alignment: Alignment.bottomCenter,
-                child: SizedBox(
-                  width: 100,
-                  child: ElevatedButton(
-                    onPressed:
-                        buttonAble != true
-                            ? null
-                            : () async {
-                              final accessToken =
-                                  await SecureStorage().storage.read(
-                                    key: "access_token",
-                                  ) ??
-                                  "";
+                child:
+                    widget.isAccepted == false
+                        ? SizedBox(
+                          width: 100,
+                          child: ElevatedButton(
+                            onPressed:
+                                buttonAble != true
+                                    ? null
+                                    : () async {
+                                      final accessToken =
+                                          await SecureStorage().storage.read(
+                                            key: "access_token",
+                                          ) ??
+                                          "";
 
-                              MatchCreateResponse result = await createMatch(
-                                accessToken,
-                                widget.request.requestUuid,
-                              );
-                              String resultTitle = "";
-                              String resultContent = "";
-                              bool success = false;
-                              switch (result.statusCode) {
-                                case 201:
-                                  success = true;
-                                  break;
-                                case 422:
-                                  resultTitle = "데이터 전송 오류";
-                                  resultContent = result.message;
-                                  break;
-                                case 500:
-                                  resultTitle = "서버 내부 오류";
-                                  resultContent = result.message;
-                                  break;
-                              }
-                              if (success) {
-                                setState(() {
-                                  buttonAble = false;
-                                });
+                                      MatchCreateResponse result =
+                                          await createMatch(
+                                            accessToken,
+                                            widget.request.requestUuid,
+                                          );
+                                      String resultTitle = "";
+                                      String resultContent = "";
+                                      bool success = false;
+                                      switch (result.statusCode) {
+                                        case 201:
+                                          success = true;
+                                          break;
+                                        case 422:
+                                          resultTitle = "데이터 전송 오류";
+                                          resultContent = result.message;
+                                          break;
+                                        case 500:
+                                          resultTitle = "서버 내부 오류";
+                                          resultContent = result.message;
+                                          break;
+                                      }
+                                      if (success) {
+                                        setState(() {
+                                          buttonAble = false;
+                                        });
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text("요청을 수락하였습니다"),
-                                    backgroundColor: const Color(0xFF7BAFD4),
-                                    behavior: SnackBarBehavior.floating,
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              } else {
-                                createSmoothDialog(
-                                  context,
-                                  resultTitle,
-                                  Text(resultContent),
-                                  TextButton(
-                                    child: Text(
-                                      "닫기",
+                                        Navigator.pop(context, true);
+
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text("요청을 수락하였습니다"),
+                                            backgroundColor: const Color(
+                                              0xFF7BAFD4,
+                                            ),
+                                            behavior: SnackBarBehavior.floating,
+                                            duration: Duration(seconds: 2),
+                                          ),
+                                        );
+                                      } else {
+                                        createSmoothDialog(
+                                          context,
+                                          resultTitle,
+                                          Text(resultContent),
+                                          TextButton(
+                                            child: Text(
+                                              "닫기",
+                                              style: TextStyle(
+                                                color: const Color(0xFF5B8FB4),
+                                              ),
+                                            ),
+                                            onPressed: () async {
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                        );
+                                      }
+                                    },
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 1.h),
+                              backgroundColor: const Color(0xFF7BAFD4),
+                            ),
+                            child:
+                                buttonAble == null
+                                    ? CircularProgressIndicator()
+                                    : Text(
+                                      "요청 수락",
                                       style: TextStyle(
-                                        color: const Color(0xFF5B8FB4),
+                                        fontSize: 16.sp,
+                                        color: Colors.white,
                                       ),
                                     ),
-                                    onPressed: () async {
-                                      Navigator.pop(context);
-                                    },
-                                  ),
+                          ),
+                        )
+                        : Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () async {
+                                String accessToken =
+                                    await SecureStorage().storage.read(
+                                      key: "access_token",
+                                    ) ??
+                                    "";
+                                GeneralResponse result = await completeMatch(
+                                  accessToken,
+                                  widget.matchUuid,
                                 );
-                              }
-                            },
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 1.h),
-                      backgroundColor: const Color(0xFF7BAFD4),
-                    ),
-                    child:
-                        buttonAble == null
-                            ? CircularProgressIndicator()
-                            : Text(
-                              "요청 수락",
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                color: Colors.white,
+
+                                if (result.statusCode == 200) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("요청을 성공적으로 완료하였습니다!"),
+                                      backgroundColor: const Color(0xFF7BAFD4),
+                                      behavior: SnackBarBehavior.floating,
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                  Navigator.pop(context, true);
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                              child: Text(
+                                "요청 완료",
+                                style: TextStyle(color: Colors.white),
                               ),
                             ),
-                  ),
-                ),
+                            ElevatedButton(
+                              onPressed: () async {
+                                String accessToken =
+                                    await SecureStorage().storage.read(
+                                      key: "access_token",
+                                    ) ??
+                                    "";
+                                GeneralResponse result = await deleteMatch(
+                                  accessToken,
+                                  widget.matchUuid,
+                                );
+
+                                if (result.statusCode == 200) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("성공적으로 취소하였습니다!"),
+                                      backgroundColor: const Color(0xFF7BAFD4),
+                                      behavior: SnackBarBehavior.floating,
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                  Navigator.pop(context, true);
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                              child: Text(
+                                "수락 취소",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
               ),
             ),
             SizedBox(height: 5.h),

@@ -73,3 +73,31 @@ class MatchResponse {
     );
   }
 }
+
+class MatchesResponse {
+  final String message;
+  final int statusCode;
+  String? detail;
+  List<Match>? matches;
+
+  MatchesResponse({
+    required this.message,
+    required this.statusCode,
+    this.detail = null,
+    this.matches = null,
+  });
+
+  factory MatchesResponse.fromJson(Map<String, dynamic> json) {
+    return MatchesResponse(
+      message: json["message"] as String,
+      statusCode: json["status_code"] as int,
+      detail: json["detail"] != null ? json["detail"] as String : null,
+      matches:
+          json["matches"] != null
+              ? (json["matches"] as List<dynamic>)
+                  .map((e) => Match.fromJson(e as Map<String, dynamic>))
+                  .toList()
+              : null,
+    );
+  }
+}

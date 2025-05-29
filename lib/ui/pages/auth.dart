@@ -7,6 +7,7 @@ import 'package:grandbuddy_client/utils/res/user.dart';
 import 'package:grandbuddy_client/utils/req/user.dart';
 import 'package:grandbuddy_client/utils/secure_storage.dart';
 import 'package:grandbuddy_client/ui/pages/home.dart';
+import 'package:grandbuddy_client/utils/res/general.dart';
 
 class GBAuthPage extends StatefulWidget {
   const GBAuthPage({super.key});
@@ -42,10 +43,7 @@ class _GBAuthPageState extends State<GBAuthPage> {
 
   void nextStep() {
     if (_formKey.currentState!.validate()) {
-      if (step < 2)
-        setState(() => step++);
-      else
-        print(step);
+      if (step < 2) setState(() => step++);
     } else {
       print("result: $_formKey.currentState!.validate()");
     }

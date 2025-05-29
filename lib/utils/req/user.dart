@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:grandbuddy_client/utils/res/user.dart';
+import 'package:grandbuddy_client/utils/res/general.dart';
 
-const String host = "http://172.17.162.46:8000/user";
+const String host = "http://192.168.219.102:8000/user";
 
 Future<ResponseWithAccessToken> login(String userID, String password) async {
   Map data = {"user_id": userID, "password": password};

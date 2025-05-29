@@ -14,14 +14,14 @@ class _CreateRequestPageState extends State<GBCreateRequestPage> {
     if (_formKey.currentState!.validate()) {
       final title = _titleController.text;
       final description = _descController.text;
-
-      // 여기에 API 호출 (POST /request) 로직 추가
-      print("요청 전송: $title, $description");
-
-      // 예시: 성공 메시지
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('요청이 생성되었습니다.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("요청을 생성되었습니다!"),
+          backgroundColor: const Color(0xFF7BAFD4),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
