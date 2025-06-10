@@ -6,6 +6,11 @@ class Request {
   final String status;
   final String created;
   String? completed;
+  String? availableDate;
+  String? availableStartTime;
+  String? availableEndTime;
+  int? views;
+  int? applications;
 
   Request({
     required this.requestUuid,
@@ -14,7 +19,12 @@ class Request {
     required this.description,
     required this.status,
     required this.created,
-    this.completed = null,
+    this.completed,
+    this.availableDate,
+    this.availableStartTime,
+    this.availableEndTime,
+    this.views,
+    this.applications,
   });
 
   factory Request.fromJson(Map<String, dynamic> json) {
@@ -22,10 +32,16 @@ class Request {
       requestUuid: json["request_uuid"] as String,
       seniorUuid: json["senior_uuid"] as String,
       title: json["title"] as String,
-      description: json["description"] as String,
+      description: json["description"] as String?,
       status: json["status"] as String,
       created: json["created"] as String,
       completed: json["completed"] != null ? json["completed"] as String : null,
+      availableDate: json["available_date"] as String?,
+      availableStartTime: json["available_start_time"] as String?,
+      availableEndTime: json["available_end_time"] as String?,
+      views: json["views"] != null ? json["views"] as int : null,
+      applications:
+          json["applications"] != null ? json["applications"] as int : null,
     );
   }
 }

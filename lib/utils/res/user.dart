@@ -9,7 +9,7 @@ class User {
   final String created;
   final String updated;
   final String address;
-  final String profile;
+  final String? profile;
 
   User({
     required this.userUuid,
@@ -22,7 +22,7 @@ class User {
     required this.created,
     required this.updated,
     required this.address,
-    required this.profile,
+    this.profile,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {

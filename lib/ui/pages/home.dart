@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:grandbuddy_client/ui/dialog/dialog.dart';
+import 'package:grandbuddy_client/ui/pages/add_request.dart';
 import 'package:grandbuddy_client/ui/pages/request_detail.dart';
 import 'package:grandbuddy_client/utils/secure_storage.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
@@ -8,25 +8,40 @@ import 'package:grandbuddy_client/utils/res/user.dart';
 import 'package:grandbuddy_client/utils/res/request.dart';
 import 'package:grandbuddy_client/utils/req/user.dart';
 import 'package:grandbuddy_client/utils/req/request.dart';
-import 'package:grandbuddy_client/ui/widgets/drawer.dart'; // 추가
+import 'package:grandbuddy_client/ui/widgets/drawer.dart';
 
-// 상태별 색상 매핑 함수
 Color getStatusColor(String status) {
   switch (status) {
     case "pending":
-      return Colors.grey;
+      return const Color(0xFF7BAFD4);
     case "accepted":
       return Colors.green;
     case "completed":
       return Colors.blue;
+    case "canceled":
     case "canceld":
       return Colors.red;
     default:
-      return Colors.white;
+      return Colors.grey;
   }
 }
 
-// 홈 페이지 위젯
+String getStatusText(String status) {
+  switch (status) {
+    case "pending":
+      return "대기 중";
+    case "accepted":
+      return "매칭됨";
+    case "completed":
+      return "완료됨";
+    case "canceled":
+    case "canceld":
+      return "취소됨";
+    default:
+      return "알 수 없음";
+  }
+}
+
 class GBHomePage extends StatefulWidget {
   const GBHomePage({Key? key}) : super(key: key);
 
@@ -37,11 +52,14 @@ class GBHomePage extends StatefulWidget {
 class _GBHomePageState extends State<GBHomePage> {
   String userID = "";
   String role = "";
-  String userUuid = ""; // 초기값을 빈 문자열로 설정
+  String userUuid = "";
   List<Request> requests = [];
-  Map<String, User> seniorMap = {}; // seniorUuid → User 매핑
+  Map<String, User> seniorMap = {};
   String accessToken = '';
+  bool isLoadingProfile = true;
+  bool isLoadingRequest = true;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     super.initState();
@@ -49,9 +67,7 @@ class _GBHomePageState extends State<GBHomePage> {
     _loadRequestList();
   }
 
-  // GBHomePage에서 요청 목록 새로 고침 함수 정의
   void _refreshRequestList() {
-    // 요청 목록 새로 고침
     _loadRequestList();
   }
 
@@ -62,7 +78,7 @@ class _GBHomePageState extends State<GBHomePage> {
     setState(() {
       userID = profile.user!.userID;
       role = profile.user!.role;
-      userUuid = profile.user!.userUuid; // 빈 문자열을 기본값으로 설정
+      userUuid = profile.user!.userUuid;
       accessToken = token;
     });
   }
@@ -70,11 +86,8 @@ class _GBHomePageState extends State<GBHomePage> {
   Future<void> _loadRequestList() async {
     final response = await getRequestExplore();
     final fetchedRequests = response.requests ?? [];
-
-    // 중복 제거된 seniorUuid만 추출
     final seniorUuids = fetchedRequests.map((e) => e.seniorUuid).toSet();
 
-    // 각 UUID별로 User 정보 요청
     for (String uuid in seniorUuids) {
       try {
         final response = await getUserByUuid(uuid);
@@ -86,12 +99,14 @@ class _GBHomePageState extends State<GBHomePage> {
 
     setState(() {
       requests = fetchedRequests;
+      isLoadingRequest = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF9F8F5),
       key: _scaffoldKey,
       drawer: CustomDrawer(userID: userID),
       appBar: AppBar(
@@ -99,10 +114,13 @@ class _GBHomePageState extends State<GBHomePage> {
         title: Center(
           child: Text(
             "Home Page",
-            style: TextStyle(color: Colors.white, fontSize: 17.sp),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 17.sp,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-
         leading: Padding(
           padding: EdgeInsets.only(left: 5.w),
           child: IconButton(
@@ -122,25 +140,27 @@ class _GBHomePageState extends State<GBHomePage> {
         ],
       ),
       body:
-          requests.isEmpty
-              ? Center(child: Text("요청 목록이 없습니다."))
+          isLoadingRequest
+              ? const Center(child: CircularProgressIndicator())
+              : requests.isEmpty
+              ? const Center(child: Text("요청 목록이 없습니다."))
               : ListView.builder(
                 itemCount: requests.length,
                 itemBuilder: (context, index) {
                   final request = requests[index];
                   final senior = seniorMap[request.seniorUuid];
-
                   return GestureDetector(
                     onTap: () async {
-                      // Card 클릭 시 상세 페이지로 이동
                       bool? result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) => RequestDetailPage(request: request),
+                              (context) => RequestDetailPage(
+                                request: request,
+                                userRole: role,
+                              ),
                         ),
                       );
-
                       if (result == true) {
                         requests = [];
                         _loadRequestList();
@@ -149,86 +169,183 @@ class _GBHomePageState extends State<GBHomePage> {
                     child: Card(
                       margin: EdgeInsets.symmetric(
                         horizontal: 4.w,
-                        vertical: 1.h,
+                        vertical: 1.2.h,
+                      ),
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Padding(
-                        padding: EdgeInsets.all(4.w),
+                        padding: EdgeInsets.symmetric(
+                          vertical: 2.2.h,
+                          horizontal: 3.w,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // 제목
-                            Text(
-                              request.title,
-                              style: TextStyle(
-                                fontSize: 17.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 0.5.h),
-
-                            // 설명
-                            Text(
-                              request.description!.length > 40
-                                  ? request.description!.substring(0, 40) +
-                                      '...'
-                                  : request.description ?? '',
-                              style: TextStyle(fontSize: 15.sp),
-                            ),
-                            SizedBox(height: 1.h),
-
-                            // 상태 표시 (색상 원)
                             Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: getStatusColor(request.status),
-                                    shape: BoxShape.circle,
+                                Expanded(
+                                  child: Text(
+                                    request.title,
+                                    style: TextStyle(
+                                      fontSize: 17.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF222222),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                SizedBox(width: 2.w),
-                                Text(
-                                  "상태: ${request.status}",
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    color: Colors.grey,
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 11,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: getStatusColor(
+                                      request.status,
+                                    ).withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    getStatusText(request.status),
+                                    style: TextStyle(
+                                      color: getStatusColor(request.status),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13.sp,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 1.h),
+                            SizedBox(height: 0.5.h),
+                            // 설명
+                            Text(
+                              request.description != null
+                                  ? (request.description!.length > 36
+                                      ? request.description!.substring(0, 36) +
+                                          '...'
+                                      : request.description!)
+                                  : '',
+                              style: TextStyle(
+                                fontSize: 15.sp,
+                                color: Colors.grey.shade800,
+                              ),
+                            ),
+                            SizedBox(height: 1.2.h),
 
-                            // 노인 정보 표시
+                            // 시간, 날짜, 조회수, 신청수 한줄
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_today,
+                                  size: 15.sp,
+                                  color: Colors.grey.shade400,
+                                ),
+                                SizedBox(width: 1.w),
+                                Text(
+                                  request.availableDate ?? '-',
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                                SizedBox(width: 3.w),
+                                Icon(
+                                  Icons.access_time,
+                                  size: 15.sp,
+                                  color: Colors.grey.shade400,
+                                ),
+                                SizedBox(width: 0.7.w),
+                                Text(
+                                  "${request.availableStartTime ?? '-'}~${request.availableEndTime ?? '-'}",
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Icon(
+                                  Icons.visibility,
+                                  size: 15.sp,
+                                  color: Colors.grey.shade400,
+                                ),
+                                SizedBox(width: 0.7.w),
+                                Text(
+                                  "${request.views ?? 0}",
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                                SizedBox(width: 2.w),
+                                Icon(
+                                  Icons.person_add,
+                                  size: 15.sp,
+                                  color: Colors.orangeAccent,
+                                ),
+                                SizedBox(width: 0.7.w),
+                                Text(
+                                  "${request.applications ?? 0}",
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 1.4.h),
+
+                            // senior 정보
                             if (senior != null)
                               Row(
                                 children: [
                                   CircleAvatar(
-                                    radius: 16.sp,
-                                    backgroundImage: NetworkImage(
-                                      "http://13.211.30.171:8000${senior.profile}",
-                                    ),
+                                    radius: 15.sp,
+                                    backgroundColor: Colors.grey[300],
+                                    backgroundImage:
+                                        senior.profile != null
+                                            ? NetworkImage(
+                                              "http://13.211.30.171:8000${senior.profile}",
+                                            )
+                                            : null,
+                                    child:
+                                        senior.profile == null
+                                            ? FaIcon(
+                                              FontAwesomeIcons.solidUser,
+                                              size: 15.sp,
+                                              color: Colors.white,
+                                            )
+                                            : null,
                                   ),
                                   SizedBox(width: 3.w),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        senior.nickname,
-                                        style: TextStyle(
-                                          fontSize: 15.sp,
-                                          fontWeight: FontWeight.w500,
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          senior.nickname,
+                                          style: TextStyle(
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w500,
+                                            color: const Color(0xFF222222),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
-                                      Text(
-                                        senior.address,
-                                        style: TextStyle(
-                                          fontSize: 13.sp,
-                                          color: Colors.grey.shade600,
+                                        SizedBox(height: 0.4.h),
+                                        Text(
+                                          senior.address,
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -239,22 +356,30 @@ class _GBHomePageState extends State<GBHomePage> {
                   );
                 },
               ),
-      // 만약 role이 senior라면 우측 하단에 + 버튼을 표시
       floatingActionButton:
           role == 'senior' && userUuid.isNotEmpty
               ? Padding(
                 padding: EdgeInsets.only(right: 5.w),
                 child: FloatingActionButton(
                   onPressed: () async {
-                    showAddRequestDialog(
+                    // showAddRequestDialog → 페이지로 이동
+                    final result = await Navigator.push(
                       context,
-                      accessToken,
-                      _refreshRequestList,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => AddRequestPage(
+                              accessToken: accessToken,
+                              onRequestCreated: _refreshRequestList,
+                            ),
+                      ),
                     );
+                    if (result == true) {
+                      _refreshRequestList();
+                    }
                   },
                   child: Icon(FontAwesomeIcons.plus, color: Colors.white),
                   backgroundColor: const Color(0xFF7BAFD4),
-                  shape: CircleBorder(),
+                  shape: const CircleBorder(),
                 ),
               )
               : null,

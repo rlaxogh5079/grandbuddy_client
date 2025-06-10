@@ -18,6 +18,7 @@ class _GBMyMatchPageState extends State<GBMyMatchPage> {
   List<Match> matches = [];
   List<Request> data = [];
   List<User> users = [];
+  bool isLoadingMatch = true;
 
   void _fetchData() async {
     String accessToken =
@@ -41,7 +42,9 @@ class _GBMyMatchPageState extends State<GBMyMatchPage> {
       }
     }
 
-    setState(() {});
+    setState(() {
+      isLoadingMatch = false;
+    });
   }
 
   @override
@@ -55,16 +58,16 @@ class _GBMyMatchPageState extends State<GBMyMatchPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF7BAFD4),
-        title: Center(
-          child: Text(
-            "My Matches",
-            style: TextStyle(color: Colors.white, fontSize: 17.sp),
-          ),
+        title: Text(
+          "My Matches",
+          style: TextStyle(color: Colors.white, fontSize: 17.sp),
         ),
         leading: BackButton(color: Colors.white),
       ),
       body:
-          data.isEmpty
+          isLoadingMatch
+              ? Center(child: CircularProgressIndicator())
+              : data.isEmpty
               ? Center(child: Text("요청을 수락한 매칭이 없습니다!"))
               : ListView.builder(
                 itemCount: data.length,
@@ -78,8 +81,8 @@ class _GBMyMatchPageState extends State<GBMyMatchPage> {
                           builder:
                               (context) => RequestDetailPage(
                                 request: data[index],
-                                isAccepted: true,
-                                matchUuid: matches[index].matchUuid,
+                                hasApplied: true,
+                                userRole: users[index].role,
                               ),
                         ),
                       );
