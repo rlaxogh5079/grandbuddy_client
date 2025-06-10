@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:grandbuddy_client/utils/res/user.dart';
 import 'package:grandbuddy_client/utils/res/general.dart';
 
-const String host = "http://192.168.219.102:8000/user";
+const String host = "http://13.211.30.171:8000/user";
 
 Future<ResponseWithAccessToken> login(String userID, String password) async {
   Map data = {"user_id": userID, "password": password};
@@ -28,7 +28,6 @@ Future<GeneralResponse> register(
   String birthDay,
   int role,
   String address,
-  String profile,
 ) async {
   Map data = {
     "user_id": userID,
@@ -39,11 +38,10 @@ Future<GeneralResponse> register(
     "birthday": "$birthDay",
     "role": role,
     "address": address,
-    "profile": profile,
   };
 
   http.Response response = await http.post(
-    Uri.parse("$host/"),
+    Uri.parse("$host"),
     headers: {"Content-Type": "application/json"},
     body: jsonEncode(data),
   );
@@ -53,7 +51,7 @@ Future<GeneralResponse> register(
 
 Future<ProfileResponse> getProfile(String accessToken) async {
   http.Response response = await http.get(
-    Uri.parse("$host/"),
+    Uri.parse("$host"),
     headers: {
       "Content-Type": "application/json",
       "Authorization": "Bearer $accessToken",

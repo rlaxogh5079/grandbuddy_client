@@ -349,11 +349,6 @@ class _GBAuthPageState extends State<GBAuthPage> {
             hint: "주소",
             controller: addressController,
           ),
-          customInput(
-            icon: Icons.image,
-            hint: "프로필 이미지 URL",
-            controller: profileController,
-          ),
           const SizedBox(height: 16),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -374,7 +369,6 @@ class _GBAuthPageState extends State<GBAuthPage> {
                   birthdayController.text,
                   roleValue,
                   addressController.text,
-                  profileController.text,
                 );
                 String resultTitle = "";
                 String resultContent = "";

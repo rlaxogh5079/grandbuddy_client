@@ -206,7 +206,7 @@ class _GBHomePageState extends State<GBHomePage> {
                                   CircleAvatar(
                                     radius: 16.sp,
                                     backgroundImage: NetworkImage(
-                                      "http://192.168.219.102:8000${senior.profile}",
+                                      "http://13.211.30.171:8000${senior.profile}",
                                     ),
                                   ),
                                   SizedBox(width: 3.w),

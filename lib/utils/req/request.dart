@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:grandbuddy_client/utils/res/request.dart';
 
-const String host = "http://192.168.219.102:8000/request";
+const String host = "http://13.211.30.171:8000/request";
 
 Future<RequestListResponse> getRequestExplore() async {
   http.Response response = await http.get(
