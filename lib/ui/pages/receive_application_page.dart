@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:grandbuddy_client/ui/pages/request_detail.dart';
 import 'package:grandbuddy_client/utils/req/application.dart';
 import 'package:grandbuddy_client/utils/res/application.dart';
@@ -46,10 +47,7 @@ class _ReceivedApplicationsPageState extends State<ReceivedApplicationsPage> {
     final myReqRes = await getRequestsBySenior(accessToken);
     final requests = myReqRes.requests ?? [];
     for (final req in requests) {
-      final appsRes = await getApplicationsByRequest(
-        accessToken,
-        req.requestUuid,
-      );
+      final appsRes = await getApplicationsByRequest(req.requestUuid);
       appMap[req.requestUuid] = appsRes.applications;
       for (final app in appsRes.applications) {
         if (!youthMap.containsKey(app.youthUuid)) {
@@ -141,7 +139,9 @@ class _ReceivedApplicationsPageState extends State<ReceivedApplicationsPage> {
                                                   : null,
                                           child:
                                               youth?.profile == null
-                                                  ? const Icon(Icons.person)
+                                                  ? const FaIcon(
+                                                    FontAwesomeIcons.solidUser,
+                                                  )
                                                   : null,
                                         ),
                                         title: Text(youth?.nickname ?? "청년"),

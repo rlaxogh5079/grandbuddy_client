@@ -90,10 +90,8 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
   }
 
   Future<void> _fetchApplicationsAndStatus() async {
-    String? token = await SecureStorage().storage.read(key: "access_token");
-    final res = await getApplicationsByRequest(token ?? "", widget.requestUuid);
+    final res = await getApplicationsByRequest(widget.requestUuid);
     applications = res.applications ?? [];
-    print("applications: ${applications.map((e) => e.toJson()).toList()}");
 
     hasApplied = false;
     myApplication = null;
@@ -101,9 +99,7 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
     matchedYouth = null;
 
     for (final app in applications) {
-      print(app.toString());
       if (app.youthUuid == myUserUuid) {
-        print("detected");
         myApplication = app;
         if (app.status == "pending" || app.status == "accepted") {
           hasApplied = true;
@@ -206,6 +202,99 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
         ),
       );
     }
+  }
+
+  Widget buildYouthActionButton(Request request) {
+    if (isMatchedByOther) {
+      return ElevatedButton(
+        onPressed: null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.grey,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+        child: Text(
+          "다른 사람과 이미 매칭된 요청입니다.",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 17.sp,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+
+    if (hasApplied) {
+      if (isMatchedMine) {
+        return ElevatedButton(
+          onPressed: null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.grey,
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+          ),
+          child: Text(
+            "매칭된 상태에서는 취소 불가",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 17.sp,
+              color: Colors.white,
+            ),
+          ),
+        );
+      } else {
+        return ElevatedButton(
+          onPressed:
+              isProcessing
+                  ? null
+                  : () => _onCancelApplicationPressed(request.requestUuid),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.redAccent,
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+          ),
+          child:
+              isProcessing
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : Text(
+                    "신청 취소",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17.sp,
+                      color: Colors.white,
+                    ),
+                  ),
+        );
+      }
+    }
+
+    // 신청 안했을 때
+    return ElevatedButton(
+      onPressed:
+          isProcessing ? null : () => _onApplyPressed(request.requestUuid),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF7BAFD4),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+      child:
+          isProcessing
+              ? const CircularProgressIndicator(color: Colors.white)
+              : Text(
+                "신청하기",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 17.sp,
+                  color: Colors.white,
+                ),
+              ),
+    );
   }
 
   // 내 게시글인지
@@ -360,14 +449,6 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextButton(
-                          child: Text("asd"),
-                          onPressed: () {
-                            print(
-                              'isMyRequest: $isMyRequest, hasApplied: $hasApplied, isMatchedMine: $isMatchedMine, isMatchedByOther: $isMatchedByOther',
-                            );
-                          },
-                        ),
                         Row(
                           children: [
                             Container(
@@ -481,221 +562,16 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
                 ),
                 SizedBox(height: 3.h),
 
-                // ----
-                // 1. 신청/취소/매칭 상태 버튼 (청년만)
+                // ↓↓↓ 청년이면 action 버튼 ↓↓↓
                 if (widget.userRole == "youth")
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 2.w),
                     child: SizedBox(
                       width: double.infinity,
                       height: 6.3.h,
-                      child:
-                          (isMatchedByOther
-                              ? ElevatedButton(
-                                onPressed: null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey,
-                                  elevation: 2,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                ),
-                                child: Text(
-                                  "다른 사람과 이미 매칭된 요청입니다.",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 17.sp,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              )
-                              : (hasApplied
-                                  ? isMatchedMine
-                                      ? ElevatedButton(
-                                        onPressed: null,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.grey,
-                                          elevation: 2,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              18,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          "매칭된 상태에서는 취소 불가",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 17.sp,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      )
-                                      : ElevatedButton(
-                                        onPressed:
-                                            isProcessing
-                                                ? null
-                                                : () =>
-                                                    _onCancelApplicationPressed(
-                                                      request.requestUuid,
-                                                    ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.redAccent,
-                                          elevation: 2,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              18,
-                                            ),
-                                          ),
-                                        ),
-                                        child:
-                                            isProcessing
-                                                ? const CircularProgressIndicator(
-                                                  color: Colors.white,
-                                                )
-                                                : Text(
-                                                  "신청 취소",
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 17.sp,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                      )
-                                  : ElevatedButton(
-                                    onPressed:
-                                        isProcessing
-                                            ? null
-                                            : () => _onApplyPressed(
-                                              request.requestUuid,
-                                            ),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: themeColor,
-                                      elevation: 2,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(18),
-                                      ),
-                                    ),
-                                    child:
-                                        isProcessing
-                                            ? const CircularProgressIndicator(
-                                              color: Colors.white,
-                                            )
-                                            : Text(
-                                              "신청하기",
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 17.sp,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                  ))),
+                      child: buildYouthActionButton(request),
                     ),
                   ),
-                // 2. 노인일 때: 신청 목록 표시
-                if (widget.userRole == "senior" && applications.isNotEmpty)
-                  isMyRequest
-                      ? ElevatedButton(
-                        onPressed: null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey,
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                        ),
-                        child: Text(
-                          "내가 등록한 요청입니다.",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 17.sp,
-                            color: Colors.white,
-                          ),
-                        ),
-                      )
-                      : Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(top: 2.h),
-                          child: ListView(
-                            children: [
-                              // 매칭된 신청자(accepted)가 있다면 최상단에 강조 표시
-                              if (acceptedApplication != null &&
-                                  matchedYouth != null)
-                                Card(
-                                  color: Colors.green[50],
-                                  elevation: 2,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  margin: EdgeInsets.only(bottom: 1.5.h),
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundImage:
-                                          matchedYouth!.profile != null
-                                              ? NetworkImage(
-                                                "http://3.27.71.121:8000${matchedYouth!.profile}",
-                                              )
-                                              : null,
-                                      child:
-                                          matchedYouth!.profile == null
-                                              ? const Icon(Icons.person)
-                                              : null,
-                                    ),
-                                    title: Text(
-                                      matchedYouth!.nickname,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.green[900],
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      "매칭된 청년 • ${acceptedApplication!.created}",
-                                      style: TextStyle(
-                                        fontSize: 13.sp,
-                                        color: Colors.green[800],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              // 나머지 신청자(accepted는 위에서 보여주므로 제외)
-                              ...applications
-                                  .where((app) => app.status != "accepted")
-                                  .map((app) {
-                                    final youth = youthMap[app.youthUuid];
-                                    return Card(
-                                      elevation: 1,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      margin: EdgeInsets.symmetric(
-                                        vertical: 0.7.h,
-                                      ),
-                                      child: ListTile(
-                                        leading: CircleAvatar(
-                                          backgroundImage:
-                                              youth?.profile != null
-                                                  ? NetworkImage(
-                                                    "http://3.27.71.121:8000${youth!.profile}",
-                                                  )
-                                                  : null,
-                                          child:
-                                              youth?.profile == null
-                                                  ? const Icon(Icons.person)
-                                                  : null,
-                                        ),
-                                        title: Text(youth?.nickname ?? "청년"),
-                                        subtitle: Text(
-                                          "${app.status} • ${app.created}",
-                                          style: TextStyle(fontSize: 13.sp),
-                                        ),
-                                      ),
-                                    );
-                                  })
-                                  .toList(),
-                            ],
-                          ),
-                        ),
-                      ),
               ],
             ),
           );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:grandbuddy_client/ui/pages/request_detail.dart';
 import 'package:grandbuddy_client/utils/req/match.dart';
 import 'package:grandbuddy_client/utils/req/request.dart';
@@ -147,7 +148,9 @@ class _GBMyMatchPageState extends State<GBMyMatchPage> {
                                           : null,
                                   child:
                                       other.profile == null
-                                          ? const Icon(Icons.person)
+                                          ? const FaIcon(
+                                            FontAwesomeIcons.solidUser,
+                                          )
                                           : null,
                                 ),
                                 SizedBox(width: 3.w),
