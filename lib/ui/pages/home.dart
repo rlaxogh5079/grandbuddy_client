@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:grandbuddy_client/ui/pages/add_request.dart';
 import 'package:grandbuddy_client/ui/pages/request_detail.dart';
+import 'package:grandbuddy_client/ui/widgets/request_card.dart';
 import 'package:grandbuddy_client/utils/secure_storage.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:grandbuddy_client/utils/res/user.dart';
@@ -50,9 +51,7 @@ class GBHomePage extends StatefulWidget {
 }
 
 class _GBHomePageState extends State<GBHomePage> {
-  String userID = "";
-  String role = "";
-  String userUuid = "";
+  User? user;
   List<Request> requests = [];
   Map<String, User> seniorMap = {};
   String accessToken = '';
@@ -75,12 +74,12 @@ class _GBHomePageState extends State<GBHomePage> {
     String token =
         await SecureStorage().storage.read(key: "access_token") ?? '';
     final profile = await getProfile(token);
-    setState(() {
-      userID = profile.user!.userID;
-      role = profile.user!.role;
-      userUuid = profile.user!.userUuid;
-      accessToken = token;
-    });
+    if (mounted) {
+      setState(() {
+        user = profile.user;
+        accessToken = token;
+      });
+    }
   }
 
   Future<void> _loadRequestList() async {
@@ -97,10 +96,12 @@ class _GBHomePageState extends State<GBHomePage> {
       }
     }
 
-    setState(() {
-      requests = fetchedRequests;
-      isLoadingRequest = false;
-    });
+    if (mounted) {
+      setState(() {
+        requests = fetchedRequests;
+        isLoadingRequest = false;
+      });
+    }
   }
 
   @override
@@ -108,12 +109,12 @@ class _GBHomePageState extends State<GBHomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F8F5),
       key: _scaffoldKey,
-      drawer: CustomDrawer(userID: userID),
+      drawer: CustomDrawer(user: user),
       appBar: AppBar(
         backgroundColor: const Color(0xFF7BAFD4),
         title: Center(
           child: Text(
-            "Home Page",
+            "홈페이지",
             style: TextStyle(
               color: Colors.white,
               fontSize: 17.sp,
@@ -149,15 +150,17 @@ class _GBHomePageState extends State<GBHomePage> {
                 itemBuilder: (context, index) {
                   final request = requests[index];
                   final senior = seniorMap[request.seniorUuid];
-                  return GestureDetector(
+                  return RequestCard(
+                    request: request,
+                    senior: senior,
                     onTap: () async {
                       bool? result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
                               (context) => RequestDetailPage(
-                                request: request,
-                                userRole: role,
+                                requestUuid: request.requestUuid,
+                                userRole: user!.role,
                               ),
                         ),
                       );
@@ -166,198 +169,11 @@ class _GBHomePageState extends State<GBHomePage> {
                         _loadRequestList();
                       }
                     },
-                    child: Card(
-                      margin: EdgeInsets.symmetric(
-                        horizontal: 4.w,
-                        vertical: 1.2.h,
-                      ),
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 2.2.h,
-                          horizontal: 3.w,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 제목
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    request.title,
-                                    style: TextStyle(
-                                      fontSize: 17.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF222222),
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 11,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: getStatusColor(
-                                      request.status,
-                                    ).withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    getStatusText(request.status),
-                                    style: TextStyle(
-                                      color: getStatusColor(request.status),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13.sp,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 0.5.h),
-                            // 설명
-                            Text(
-                              request.description != null
-                                  ? (request.description!.length > 36
-                                      ? request.description!.substring(0, 36) +
-                                          '...'
-                                      : request.description!)
-                                  : '',
-                              style: TextStyle(
-                                fontSize: 15.sp,
-                                color: Colors.grey.shade800,
-                              ),
-                            ),
-                            SizedBox(height: 1.2.h),
-
-                            // 시간, 날짜, 조회수, 신청수 한줄
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.calendar_today,
-                                  size: 15.sp,
-                                  color: Colors.grey.shade400,
-                                ),
-                                SizedBox(width: 1.w),
-                                Text(
-                                  request.availableDate ?? '-',
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                                SizedBox(width: 3.w),
-                                Icon(
-                                  Icons.access_time,
-                                  size: 15.sp,
-                                  color: Colors.grey.shade400,
-                                ),
-                                SizedBox(width: 0.7.w),
-                                Text(
-                                  "${request.availableStartTime ?? '-'}~${request.availableEndTime ?? '-'}",
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Icon(
-                                  Icons.visibility,
-                                  size: 15.sp,
-                                  color: Colors.grey.shade400,
-                                ),
-                                SizedBox(width: 0.7.w),
-                                Text(
-                                  "${request.views ?? 0}",
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                                SizedBox(width: 2.w),
-                                Icon(
-                                  Icons.person_add,
-                                  size: 15.sp,
-                                  color: Colors.orangeAccent,
-                                ),
-                                SizedBox(width: 0.7.w),
-                                Text(
-                                  "${request.applications ?? 0}",
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 1.4.h),
-
-                            // senior 정보
-                            if (senior != null)
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 15.sp,
-                                    backgroundColor: Colors.grey[300],
-                                    backgroundImage:
-                                        senior.profile != null
-                                            ? NetworkImage(
-                                              "http://13.211.30.171:8000${senior.profile}",
-                                            )
-                                            : null,
-                                    child:
-                                        senior.profile == null
-                                            ? FaIcon(
-                                              FontAwesomeIcons.solidUser,
-                                              size: 15.sp,
-                                              color: Colors.white,
-                                            )
-                                            : null,
-                                  ),
-                                  SizedBox(width: 3.w),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          senior.nickname,
-                                          style: TextStyle(
-                                            fontSize: 14.sp,
-                                            fontWeight: FontWeight.w500,
-                                            color: const Color(0xFF222222),
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        SizedBox(height: 0.4.h),
-                                        Text(
-                                          senior.address,
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
                   );
                 },
               ),
       floatingActionButton:
-          role == 'senior' && userUuid.isNotEmpty
+          user?.role == 'senior' && user?.userUuid != null
               ? Padding(
                 padding: EdgeInsets.only(right: 5.w),
                 child: FloatingActionButton(

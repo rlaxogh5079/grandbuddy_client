@@ -77,13 +77,19 @@ class _AddRequestPageState extends State<AddRequestPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF9F8F5),
       appBar: AppBar(
         title: Text(
           "요청 생성",
-          style: TextStyle(fontSize: 17.sp, color: Colors.white),
+          style: TextStyle(
+            fontSize: 17.sp,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: const Color(0xFF7BAFD4),
         centerTitle: true,
+        leading: BackButton(color: Colors.white),
       ),
       body: Padding(
         padding: EdgeInsets.all(5.w),

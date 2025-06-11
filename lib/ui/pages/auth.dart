@@ -430,7 +430,7 @@ class _GBAuthPageState extends State<GBAuthPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6FA),
+      backgroundColor: const Color(0xFFF9F8F5),
       body: Center(
         child: SingleChildScrollView(
           child: Container(

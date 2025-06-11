@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:grandbuddy_client/utils/res/match.dart';
 import 'package:grandbuddy_client/utils/res/general.dart';
 
-const String host = "http://13.211.30.171:8000/match";
+const String host = "http://3.27.71.121:8000/match";
 
 Future<MatchCreateResponse> createMatch(
   String accessToken,

@@ -3,7 +3,7 @@ import 'package:grandbuddy_client/utils/res/application.dart';
 import 'package:http/http.dart' as http;
 import 'package:grandbuddy_client/utils/res/request.dart';
 
-const String host = "http://13.211.30.171:8000/request";
+const String host = "http://3.27.71.121:8000/request";
 
 // 요청 둘러보기(조회)
 Future<RequestListResponse> getRequestExplore() async {
@@ -71,4 +71,46 @@ Future<ApplicationResponse> applyToRequest(
   return ApplicationResponse.fromJson(
     json.decode(utf8.decoder.convert(response.bodyBytes)),
   );
+}
+
+Future<RequestListResponse> getRequestsBySenior(String accessToken) async {
+  final response = await http.get(
+    Uri.parse(host),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $accessToken",
+    },
+  );
+
+  String responseBody = utf8.decoder.convert(response.bodyBytes);
+  return RequestListResponse.fromJson(json.decode(responseBody));
+}
+
+Future<RequestListResponse> getRequestsByApplicant(String accessToken) async {
+  final response = await http.get(
+    Uri.parse("$host/applied/me"),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $accessToken",
+    },
+  );
+
+  String responseBody = utf8.decoder.convert(response.bodyBytes);
+  return RequestListResponse.fromJson(json.decode(responseBody));
+}
+
+Future<RequestResponse> cancelApplication(
+  String accessToken,
+  String requestUuid,
+) async {
+  final response = await http.delete(
+    Uri.parse("http://3.27.71.121:8000/request/$requestUuid/application"),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $accessToken",
+    },
+  );
+  String responseBody = utf8.decoder.convert(response.bodyBytes);
+  print("body: $responseBody");
+  return RequestResponse.fromJson(json.decode(responseBody));
 }
