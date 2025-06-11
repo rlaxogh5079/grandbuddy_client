@@ -118,7 +118,7 @@ class ProfileDetailPage extends StatelessWidget {
                         dense: true,
                         leading: Icon(Icons.email, color: themeColor),
                         title: Text(
-                          user.email ?? '-',
+                          user.email,
                           style: TextStyle(fontSize: 15.sp),
                         ),
                       ),
@@ -140,27 +140,22 @@ class ProfileDetailPage extends StatelessWidget {
                                 )
                                 : null,
                       ),
-                      if (user.birthDay != null)
-                        ListTile(
-                          dense: true,
-                          leading: Icon(Icons.cake, color: themeColor),
-                          title: Text(
-                            "생일: ${formatDate(user.birthDay)}",
-                            style: TextStyle(fontSize: 15.sp),
-                          ),
+                      ListTile(
+                        dense: true,
+                        leading: Icon(Icons.cake, color: themeColor),
+                        title: Text(
+                          "생일: ${formatDate(user.birthDay)}",
+                          style: TextStyle(fontSize: 15.sp),
                         ),
-                      if (user.created != null)
-                        ListTile(
-                          dense: true,
-                          leading: Icon(
-                            Icons.calendar_today,
-                            color: themeColor,
-                          ),
-                          title: Text(
-                            "가입일: ${formatDate(user.created)}",
-                            style: TextStyle(fontSize: 15.sp),
-                          ),
+                      ),
+                      ListTile(
+                        dense: true,
+                        leading: Icon(Icons.calendar_today, color: themeColor),
+                        title: Text(
+                          "가입일: ${formatDate(user.created)}",
+                          style: TextStyle(fontSize: 15.sp),
                         ),
+                      ),
                     ],
                   ),
                 ),

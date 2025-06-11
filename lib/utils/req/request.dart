@@ -111,6 +111,20 @@ Future<RequestResponse> cancelApplication(
     },
   );
   String responseBody = utf8.decoder.convert(response.bodyBytes);
-  print("body: $responseBody");
+  return RequestResponse.fromJson(json.decode(responseBody));
+}
+
+Future<RequestResponse> cancelRequest(
+  String accessToken,
+  String requestUuid,
+) async {
+  final response = await http.delete(
+    Uri.parse("http://3.27.71.121:8000/request/$requestUuid"),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $accessToken",
+    },
+  );
+  String responseBody = utf8.decoder.convert(response.bodyBytes);
   return RequestResponse.fromJson(json.decode(responseBody));
 }

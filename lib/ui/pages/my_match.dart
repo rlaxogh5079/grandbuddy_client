@@ -166,14 +166,14 @@ class _GBMyMatchPageState extends State<GBMyMatchPage> {
                                     ),
                                     SizedBox(height: 0.5.h),
                                     Text(
-                                      other.phone ?? "-",
+                                      other.phone,
                                       style: TextStyle(
                                         fontSize: 13.sp,
                                         color: Colors.grey.shade700,
                                       ),
                                     ),
                                     Text(
-                                      other.email ?? "-",
+                                      other.email,
                                       style: TextStyle(
                                         fontSize: 13.sp,
                                         color: Colors.grey.shade600,
