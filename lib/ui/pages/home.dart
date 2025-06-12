@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:grandbuddy_client/ui/pages/add_request.dart';
+import 'package:grandbuddy_client/ui/pages/request_list_page.dart';
+import 'package:grandbuddy_client/ui/pages/task_page.dart';
 import 'package:grandbuddy_client/ui/pages/chat_list_page.dart';
-import 'package:grandbuddy_client/ui/pages/request_detail.dart';
 import 'package:grandbuddy_client/ui/widgets/drawer.dart';
-import 'package:grandbuddy_client/utils/req/application.dart';
-import 'package:grandbuddy_client/utils/req/match.dart';
-import 'package:grandbuddy_client/utils/req/message.dart';
-import 'package:grandbuddy_client/utils/req/user.dart';
-import 'package:grandbuddy_client/utils/req/request.dart';
-import 'package:grandbuddy_client/utils/res/request.dart';
 import 'package:grandbuddy_client/utils/res/user.dart';
 import 'package:grandbuddy_client/utils/secure_storage.dart';
-import 'package:grandbuddy_client/ui/widgets/request_card.dart';
-import 'package:responsive_sizer/responsive_sizer.dart';
+import 'package:grandbuddy_client/utils/req/user.dart';
+import 'package:grandbuddy_client/utils/req/match.dart';
+import 'package:grandbuddy_client/utils/req/message.dart';
+import 'package:grandbuddy_client/utils/req/request.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class GBHomePage extends StatefulWidget {
   const GBHomePage({Key? key}) : super(key: key);
@@ -23,71 +19,30 @@ class GBHomePage extends StatefulWidget {
 }
 
 class _GBHomePageState extends State<GBHomePage> {
+  int _currentIndex = 0;
   User? user;
-  List<Request> requests = [];
-  Map<String, User> seniorMap = {};
-  bool isLoadingProfile = true;
-  bool isLoadingRequest = true;
-  String accessToken = '';
+  bool isLoading = true;
+  final PageController _pageController = PageController(initialPage: 0);
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
-    _loadRequestList();
+    _loadUser();
   }
 
-  void _refreshRequestList() {
-    _loadRequestList();
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
-  Future<void> _loadProfile() async {
-    accessToken = await SecureStorage().storage.read(key: "access_token") ?? '';
-    final profile = await getProfile(accessToken);
+  Future<void> _loadUser() async {
+    final token = await SecureStorage().storage.read(key: 'access_token') ?? '';
+    final res = await getProfile(token);
     setState(() {
-      user = profile.user;
-      isLoadingProfile = false;
-    });
-  }
-
-  Future<void> _loadRequestList() async {
-    setState(() => isLoadingRequest = true);
-
-    accessToken = await SecureStorage().storage.read(key: "access_token") ?? "";
-    final profile = await getProfile(accessToken);
-    user = profile.user;
-
-    final response = await getRequestExplore(); // 전체 요청
-    final fetched = response.requests ?? [];
-
-    List<Request> filtered = fetched;
-
-    // ✅ 유저가 청년이면 내가 신청한 요청 제외
-    if (user?.role == "youth") {
-      final appsRes = await getMyApplications(accessToken); // 내가 신청한 모든 요청
-      final myRequestUuids =
-          appsRes.requests?.map((a) => a.requestUuid).toSet();
-
-      filtered =
-          fetched
-              .where((r) => !myRequestUuids!.contains(r.requestUuid))
-              .toList();
-    }
-
-    // senior 정보 불러오기
-    final seniorUuids = filtered.map((r) => r.seniorUuid).toSet();
-    seniorMap.clear();
-    for (var uuid in seniorUuids) {
-      final res = await getUserByUuid(uuid);
-      if (res.statusCode == 200 && res.user != null) {
-        seniorMap[uuid] = res.user!;
-      }
-    }
-
-    setState(() {
-      requests = filtered;
-      isLoadingRequest = false;
+      user = res.user;
+      isLoading = false;
     });
   }
 
@@ -99,19 +54,11 @@ class _GBHomePageState extends State<GBHomePage> {
       drawer: CustomDrawer(user: user),
       appBar: AppBar(
         backgroundColor: const Color(0xFF7BAFD4),
+        title: const Text("동네 손주", style: TextStyle(color: Colors.white)),
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(FontAwesomeIcons.bars, color: Colors.white),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
-        title: Center(
-          child: Text(
-            "홈페이지",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 17.sp,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
         ),
         actions: [
           IconButton(
@@ -134,13 +81,14 @@ class _GBHomePageState extends State<GBHomePage> {
                   final isSenior = myUser.role == "senior";
                   final otherUuid = isSenior ? match.youthUuid : req.seniorUuid;
 
-                  if (otherUuid.isEmpty || addedUuids.contains(otherUuid))
+                  if (otherUuid.isEmpty || addedUuids.contains(otherUuid)) {
                     continue;
+                  }
 
                   final otherUserRes = await getUserByUuid(otherUuid);
                   if (otherUserRes.user == null) continue;
                   final other = otherUserRes.user!;
-                  addedUuids.add(otherUuid); // ✅ 여기에 옮김
+                  addedUuids.add(otherUuid);
 
                   final msgRes = await getLastMessage(match.matchUuid);
                   final lastMsg = msgRes?["message"] ?? "";
@@ -162,68 +110,37 @@ class _GBHomePageState extends State<GBHomePage> {
               );
             },
           ),
-          SizedBox(width: 5.w),
         ],
       ),
       body:
-          isLoadingRequest
+          isLoading
               ? const Center(child: CircularProgressIndicator())
-              : requests.isEmpty
-              ? const Center(child: Text("요청 목록이 없습니다."))
-              : ListView.builder(
-                itemCount: requests.length,
-                itemBuilder: (context, idx) {
-                  final req = requests[idx];
-                  final senior = seniorMap[req.seniorUuid];
-                  return RequestCard(
-                    request: req,
-                    senior: senior,
-                    onTap: () async {
-                      // detail에서 true 리턴받으면 새로고침
-                      final changed = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => RequestDetailPage(
-                                requestUuid: req.requestUuid,
-                                userRole: user!.role,
-                              ),
-                        ),
-                      );
-                      if (changed == true) {
-                        _loadRequestList();
-                      }
-                    },
-                  );
+              : PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                onPageChanged: (index) {
+                  setState(() => _currentIndex = index);
                 },
+                children: [RequestListPage(), TasksPage(user: user!)],
               ),
-      floatingActionButton:
-          user?.role == 'senior'
-              ? Padding(
-                padding: EdgeInsets.only(right: 5.w),
-                child: FloatingActionButton(
-                  onPressed: () async {
-                    // showAddRequestDialog → 페이지로 이동
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => AddRequestPage(
-                              accessToken: accessToken,
-                              onRequestCreated: _refreshRequestList,
-                            ),
-                      ),
-                    );
-                    if (result == true) {
-                      _refreshRequestList();
-                    }
-                  },
-                  child: Icon(FontAwesomeIcons.plus, color: Colors.white),
-                  backgroundColor: const Color(0xFF7BAFD4),
-                  shape: const CircleBorder(),
-                ),
-              )
-              : null,
+
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        selectedItemColor: const Color(0xFF7BAFD4),
+        onTap: (index) {
+          setState(() => _currentIndex = index);
+          _pageController.animateToPage(
+            index,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.ease,
+          );
+        },
+
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.list), label: '요청'),
+          BottomNavigationBarItem(icon: Icon(Icons.task), label: '할 일'),
+        ],
+      ),
     );
   }
 }

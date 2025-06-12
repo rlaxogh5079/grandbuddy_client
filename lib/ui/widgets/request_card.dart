@@ -56,10 +56,7 @@ class RequestCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        margin: EdgeInsets.symmetric(
-          horizontal: 4.w,
-          vertical: (senior == null || child == null) ? 1.h : 0.h,
-        ),
+        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
         elevation: 3,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(

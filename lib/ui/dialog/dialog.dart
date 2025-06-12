@@ -31,127 +31,49 @@ void createSmoothDialog(
   );
 }
 
-// 다이얼로그 화면 구성
-// ignore: must_be_immutable
-class _DynamicDialog extends StatefulWidget {
-  var leadingIcon;
-  var title;
-  var content;
-  var actions;
+class _DynamicDialog extends StatelessWidget {
+  final Widget? leadingIcon;
+  final String title;
+  final Widget content;
+  final Widget actions;
 
-  _DynamicDialog({
+  const _DynamicDialog({
     Key? key,
-    required this.leadingIcon,
+    this.leadingIcon,
     required this.title,
     required this.content,
     required this.actions,
   }) : super(key: key);
 
   @override
-  State<_DynamicDialog> createState() => _DynamicDialogState();
-}
-
-class _DynamicDialogState extends State<_DynamicDialog> {
-  @override
   Widget build(BuildContext context) {
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
       child: AlertDialog(
-        // RoundedRectangleBorder - Dialog 화면 모서리 둥글게 조절
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0),
+        backgroundColor: const Color(0xFFFDFDFD),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: const EdgeInsets.only(top: 20, left: 20, right: 20),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
         ),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children:
-              widget.leadingIcon is Icon
-                  ? <Widget>[
-                    widget.leadingIcon,
-                    Text(
-                      " ${widget.title}",
-                    ), // For space between icon and title
-                  ]
-                  : <Widget>[
-                    Text(widget.title), // For space between icon and title
-                  ],
+        actionsPadding: const EdgeInsets.only(bottom: 16, right: 16),
+        title: Column(
+          children: [
+            if (leadingIcon != null) ...[
+              Center(child: leadingIcon),
+              const SizedBox(height: 12),
+            ],
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-        content: Container(child: widget.content),
-        actions: [widget.actions],
+        content: content,
+        actions: [actions],
       ),
     );
   }
-}
-
-// + 버튼 눌렀을 때 나타나는 요청 폼 다이얼로그
-void showAddRequestDialog(
-  BuildContext context,
-  String accessToken,
-  Function refreshState,
-) {
-  TextEditingController titleController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
-
-  createSmoothDialog(
-    context,
-    "할 일 요청",
-    Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextField(
-          controller: titleController,
-          decoration: InputDecoration(
-            labelText: '제목',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        SizedBox(height: 16.0),
-        TextField(
-          controller: descriptionController,
-          decoration: InputDecoration(
-            labelText: '설명',
-            border: OutlineInputBorder(),
-            floatingLabelAlignment: FloatingLabelAlignment.start,
-            labelStyle: TextStyle(),
-          ),
-          maxLines: 4,
-        ),
-        SizedBox(height: 16.0),
-      ],
-    ),
-    Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        ElevatedButton(
-          onPressed: () async {
-            String title = titleController.text;
-            String description = descriptionController.text;
-
-            if (title.isEmpty || description.isEmpty) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text('두 가지 항목 다 입력해주세요.')));
-            } else {
-              RequestResponse response = await createRequest(
-                accessToken,
-                title,
-                description,
-                "2025-06-10",
-                "20:01:55.645Z",
-                "20:01:55.645Z",
-              );
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(response.message),
-                  duration: Duration(seconds: 3),
-                ),
-              );
-              Navigator.of(context).pop();
-              refreshState();
-            }
-          },
-          child: Text('요청하기'),
-        ),
-      ],
-    ),
-  );
 }
