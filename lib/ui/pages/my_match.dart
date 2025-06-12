@@ -116,7 +116,8 @@ class _GBMyMatchPageState extends State<GBMyMatchPage> {
                           builder:
                               (context) => RequestDetailPage(
                                 requestUuid: data[index].requestUuid,
-                                userRole: users[index].role,
+                                userRole: myRole ?? "",
+                                match: matches[index],
                               ),
                         ),
                       );

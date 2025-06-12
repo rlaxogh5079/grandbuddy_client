@@ -51,6 +51,7 @@ class ProfileDetailPage extends StatelessWidget {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        leading: BackButton(color: Colors.white),
       ),
       backgroundColor: const Color(0xFFF9F8F5),
       body: SingleChildScrollView(

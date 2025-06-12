@@ -167,67 +167,105 @@ class RequestCard extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 1.4.h),
               // senior 정보
               if (senior != null)
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ProfileDetailPage(user: senior!),
-                      ),
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 15.sp,
-                        backgroundColor: Colors.grey[300],
-                        backgroundImage:
-                            senior!.profile != null
-                                ? NetworkImage(
-                                  "http://3.27.71.121:8000${senior!.profile}",
-                                )
-                                : null,
-                        child:
-                            senior!.profile == null
-                                ? FaIcon(
-                                  FontAwesomeIcons.solidUser,
-                                  size: 15.sp,
-                                  color: Colors.white,
-                                )
-                                : null,
-                      ),
-                      SizedBox(width: 3.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              senior!.nickname,
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF222222),
+                Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 0.7.h),
+                      child: Divider(color: Colors.grey[400], thickness: 1),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProfileDetailPage(user: senior!),
+                          ),
+                        );
+                      },
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(0xFF7BAFD4), // 테두리 강조
+                                width: 2.3,
                               ),
-                              overflow: TextOverflow.ellipsis,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF7BAFD4,
+                                  ).withOpacity(0.18),
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            SizedBox(height: 0.4.h),
-                            Text(
-                              senior!.address,
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: Colors.grey.shade600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                            child: CircleAvatar(
+                              radius: 15.sp,
+                              backgroundColor: const Color(0xFF7BAFD4),
+                              backgroundImage:
+                                  senior!.profile != null
+                                      ? NetworkImage(
+                                        "http://3.27.71.121:8000${senior!.profile}",
+                                      )
+                                      : null,
+                              child:
+                                  senior!.profile == null
+                                      ? FaIcon(
+                                        FontAwesomeIcons.solidUser,
+                                        size: 15.sp,
+                                        color: Colors.white,
+                                      )
+                                      : null,
                             ),
-                          ],
-                        ),
+                          ),
+                          SizedBox(width: 3.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        senior!.nickname,
+                                        style: TextStyle(
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFF222222),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: const Color(0xFF7BAFD4),
+                                      size: 20.sp,
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 0.4.h),
+                                Text(
+                                  senior!.address,
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+
               if (child != null && request.status != "accepted") ...[
                 SizedBox(height: 2.h),
                 child!,

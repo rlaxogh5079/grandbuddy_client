@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:grandbuddy_client/ui/widgets/request_action_buttons.dart';
 import 'package:grandbuddy_client/utils/req/match.dart';
 import 'package:grandbuddy_client/utils/req/user.dart';
 import 'package:grandbuddy_client/utils/req/application.dart';
 import 'package:grandbuddy_client/utils/res/application.dart';
 import 'package:grandbuddy_client/utils/res/request.dart';
 import 'package:grandbuddy_client/utils/res/user.dart';
+import 'package:grandbuddy_client/utils/res/match.dart';
 import 'package:grandbuddy_client/utils/secure_storage.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:grandbuddy_client/ui/dialog/dialog.dart';
@@ -46,11 +48,13 @@ String getStatusText(String status) {
 class RequestDetailPage extends StatefulWidget {
   final String requestUuid;
   final String userRole; // "senior" 또는 "youth"
+  Match? match;
 
-  const RequestDetailPage({
+  RequestDetailPage({
     Key? key,
     required this.requestUuid,
     required this.userRole,
+    this.match,
   }) : super(key: key);
 
   @override
@@ -205,281 +209,64 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
     }
   }
 
-  Widget buildYouthActionButton(Request request) {
-    if (isMatchedByOther) {
-      return ElevatedButton(
-        onPressed: null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.grey,
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-        ),
-        child: Text(
-          "다른 사람과 이미 매칭된 요청입니다.",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 17.sp,
-            color: Colors.white,
-          ),
+  Future<void> onCompleteMatch() async {
+    setState(() => isProcessing = true);
+    final accessToken =
+        await SecureStorage().storage.read(key: "access_token") ?? "";
+    final res = await completeMatch(
+      accessToken,
+      widget.match!.matchUuid, // 또는 matchUuid 변수로 전달
+    );
+    setState(() => isProcessing = false);
+
+    if (res.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("요청이 완료되었습니다."), backgroundColor: Colors.green),
+      );
+      _futureRequest = getRequestByUuid(widget.requestUuid);
+      await _fetchApplicationsAndStatus();
+      setState(() {});
+    } else {
+      createSmoothDialog(
+        context,
+        "실패",
+        Text(res.message),
+        TextButton(
+          child: const Text("닫기", style: TextStyle(color: Color(0xFF7BAFD4))),
+          onPressed: () => Navigator.pop(context),
         ),
       );
     }
-
-    if (hasApplied) {
-      if (isMatchedMine) {
-        return ElevatedButton(
-          onPressed: null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.grey,
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-          ),
-          child: Text(
-            "매칭된 상태에서는 취소 불가",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 17.sp,
-              color: Colors.white,
-            ),
-          ),
-        );
-      } else {
-        return ElevatedButton(
-          onPressed:
-              isProcessing
-                  ? null
-                  : () => _onCancelApplicationPressed(request.requestUuid),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.redAccent,
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-          ),
-          child:
-              isProcessing
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : Text(
-                    "신청 취소",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17.sp,
-                      color: Colors.white,
-                    ),
-                  ),
-        );
-      }
-    }
-
-    // 신청 안했을 때
-    return ElevatedButton(
-      onPressed:
-          isProcessing ? null : () => _onApplyPressed(request.requestUuid),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF7BAFD4),
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      ),
-      child:
-          isProcessing
-              ? const CircularProgressIndicator(color: Colors.white)
-              : Text(
-                "신청하기",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 17.sp,
-                  color: Colors.white,
-                ),
-              ),
-    );
   }
 
-  Widget buildSeniorMatchActionButtons(Request request) {
-    if (acceptedApplication == null || matchedYouth == null)
-      return SizedBox.shrink();
-    if (request.status == "completed" || request.status == "canceled")
-      return SizedBox.shrink();
+  Future<void> onCancelRequest() async {
+    setState(() => isProcessing = true);
+    final accessToken =
+        await SecureStorage().storage.read(key: "access_token") ?? "";
+    final res = await cancelRequest(accessToken, widget.requestUuid);
+    setState(() => isProcessing = false);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        children: [
-          // 안내 문구
-          Text(
-            "매칭이 성사된 요청입니다. 완료 또는 취소를 선택하세요.",
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade700,
-              fontSize: 16,
-            ),
-          ),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              // 완료 버튼
-              Expanded(
-                child: ElevatedButton.icon(
-                  icon: Icon(Icons.check_circle, color: Colors.white, size: 26),
-                  label:
-                      isProcessing
-                          ? Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6.0),
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            ),
-                          )
-                          : Text(
-                            "완료 처리",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade600,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 2,
-                  ),
-                  onPressed:
-                      isProcessing
-                          ? null
-                          : () async {
-                            setState(() => isProcessing = true);
-                            final accessToken =
-                                await SecureStorage().storage.read(
-                                  key: "access_token",
-                                ) ??
-                                "";
-                            final res = await completeMatch(
-                              accessToken,
-                              matched,
-                            );
-                            setState(() => isProcessing = false);
-                            if (res.statusCode == 200) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("요청이 완료되었습니다."),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                              _futureRequest = getRequestByUuid(
-                                widget.requestUuid,
-                              );
-                              await _fetchApplicationsAndStatus();
-                              setState(() {});
-                            } else {
-                              createSmoothDialog(
-                                context,
-                                "실패",
-                                Text(res.message),
-                                TextButton(
-                                  child: const Text(
-                                    "닫기",
-                                    style: TextStyle(color: Color(0xFF7BAFD4)),
-                                  ),
-                                  onPressed: () => Navigator.pop(context),
-                                ),
-                              );
-                            }
-                          },
-                ),
-              ),
-              SizedBox(width: 16),
-              // 취소 버튼
-              Expanded(
-                child: ElevatedButton.icon(
-                  icon: Icon(Icons.cancel, color: Colors.white, size: 26),
-                  label:
-                      isProcessing
-                          ? Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6.0),
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            ),
-                          )
-                          : Text(
-                            "요청 취소",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent.shade700,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 2,
-                  ),
-                  onPressed:
-                      isProcessing
-                          ? null
-                          : () async {
-                            setState(() => isProcessing = true);
-                            final accessToken =
-                                await SecureStorage().storage.read(
-                                  key: "access_token",
-                                ) ??
-                                "";
-                            final res = await cancelRequest(
-                              accessToken,
-                              request.requestUuid,
-                            );
-                            setState(() => isProcessing = false);
-                            if (res.statusCode == 200) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("요청이 취소되었습니다."),
-                                  backgroundColor: Colors.redAccent,
-                                ),
-                              );
-                              _futureRequest = getRequestByUuid(
-                                widget.requestUuid,
-                              );
-                              await _fetchApplicationsAndStatus();
-                              setState(() {});
-                            } else {
-                              createSmoothDialog(
-                                context,
-                                "실패",
-                                Text(res.message),
-                                TextButton(
-                                  child: const Text(
-                                    "닫기",
-                                    style: TextStyle(color: Color(0xFF7BAFD4)),
-                                  ),
-                                  onPressed: () => Navigator.pop(context),
-                                ),
-                              );
-                            }
-                          },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+    if (res.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("요청이 취소되었습니다."),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      _futureRequest = getRequestByUuid(widget.requestUuid);
+      await _fetchApplicationsAndStatus();
+      setState(() {});
+    } else {
+      createSmoothDialog(
+        context,
+        "실패",
+        Text(res.message),
+        TextButton(
+          child: const Text("닫기", style: TextStyle(color: Color(0xFF7BAFD4))),
+          onPressed: () => Navigator.pop(context),
+        ),
+      );
+    }
   }
 
   // 내 게시글인지
@@ -746,7 +533,16 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
                             matchedYouth != null)
                           Padding(
                             padding: EdgeInsets.only(top: 1.8.h),
-                            child: buildSeniorMatchActionButtons(request),
+                            child: SeniorMatchActionButtons(
+                              show:
+                                  acceptedApplication != null &&
+                                  matchedYouth != null &&
+                                  !(request.status == "completed" ||
+                                      request.status == "canceled"),
+                              isProcessing: isProcessing,
+                              onComplete: onCompleteMatch,
+                              onCancel: onCancelRequest,
+                            ),
                           ),
                       ],
                     ),
@@ -761,7 +557,17 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
                     child: SizedBox(
                       width: double.infinity,
                       height: 6.3.h,
-                      child: buildYouthActionButton(request),
+                      child: YouthRequestActionButton(
+                        isMatchedByOther: isMatchedByOther,
+                        hasApplied: hasApplied,
+                        isMatchedMine: isMatchedMine,
+                        isProcessing: isProcessing,
+                        onApply: () => _onApplyPressed(request.requestUuid),
+                        onCancel:
+                            () => _onCancelApplicationPressed(
+                              request.requestUuid,
+                            ),
+                      ),
                     ),
                   ),
               ],
