@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:grandbuddy_client/utils/req/user.dart';
 import 'package:grandbuddy_client/utils/res/user.dart';
+import 'package:grandbuddy_client/utils/secure_storage.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
 class ProfileEditPage extends StatefulWidget {
-  User? user;
-  ProfileEditPage({Key? key, this.user}) : super(key: key);
+  final User? user;
+  const ProfileEditPage({Key? key, this.user}) : super(key: key);
 
   @override
   State<ProfileEditPage> createState() => _ProfileEditPageState();
@@ -20,9 +23,11 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   @override
   void initState() {
     super.initState();
-    nicknameController = TextEditingController(text: widget.user!.nickname);
-    emailController = TextEditingController(text: widget.user!.email);
-    addressController = TextEditingController(text: widget.user!.address);
+    nicknameController = TextEditingController(
+      text: widget.user?.nickname ?? "",
+    );
+    emailController = TextEditingController(text: widget.user?.email ?? "");
+    addressController = TextEditingController(text: widget.user?.address ?? "");
   }
 
   @override
@@ -35,30 +40,70 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   }
 
   Future<void> _saveProfile() async {
-    if (mounted) {
-      setState(() => isProcessing = true);
+    String nickname = nicknameController.text.trim();
+    String email = emailController.text.trim();
+    String address = addressController.text.trim();
+    String password = passwordController.text.trim();
+
+    if (nickname.isEmpty || email.isEmpty || address.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("닉네임, 이메일, 주소는 필수입니다.")));
+      return;
+    }
+    if (!RegExp(r"^[^@]+@[^@]+\.[^@]+").hasMatch(email)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("유효한 이메일을 입력하세요.")));
+      return;
     }
 
-    // 실제 수정 API 호출 필요. 아래는 예시
-    final profileData = {
-      "password": passwordController.text,
-      "nickname": nicknameController.text,
-      "email": emailController.text,
-      "address": addressController.text,
-    };
+    setState(() => isProcessing = true);
 
-    // TODO: 프로필 수정 API 호출 (예시)
-    // final result = await updateProfileAPI(profileData);
-    // if (result.statusCode == 200) ...
-
-    await Future.delayed(const Duration(seconds: 1)); // 디버깅용 대기
+    final accessToken = await SecureStorage().storage.read(key: "access_token");
+    final result = await updateUser(
+      accessToken ?? "",
+      password, // 빈 값이면 서버에서 무시
+      nickname,
+      email,
+      address,
+    );
 
     setState(() => isProcessing = false);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("프로필이 저장되었습니다.")));
-    Navigator.pop(context);
+
+    if (result.statusCode == 200) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("프로필이 저장되었습니다.")));
+      Navigator.pop(context, true);
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+    }
   }
+
+  InputDecoration _inputDecoration(String hint, IconData iconData) =>
+      InputDecoration(
+        prefixIcon: Padding(
+          padding: EdgeInsets.only(left: 5.w, right: 8),
+          child: FaIcon(iconData, color: Color(0xFF7BAFD4), size: 20.sp),
+        ),
+        prefixIconConstraints: BoxConstraints(minWidth: 0, minHeight: 0),
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey[500], fontSize: 15.sp),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 18),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Color(0xFF7BAFD4), width: 2),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -77,77 +122,88 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         centerTitle: true,
         leading: BackButton(color: Colors.white),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: EdgeInsets.all(6.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("비밀번호", style: TextStyle(fontWeight: FontWeight.bold)),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                hintText: "새 비밀번호를 입력하세요",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          color: Colors.white,
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 4.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nicknameController,
+                  decoration: _inputDecoration("닉네임", FontAwesomeIcons.userTag),
                 ),
-              ),
-            ),
-            SizedBox(height: 2.h),
-            Text("닉네임", style: TextStyle(fontWeight: FontWeight.bold)),
-            TextField(
-              controller: nicknameController,
-              decoration: InputDecoration(
-                hintText: "닉네임을 입력하세요",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            SizedBox(height: 2.h),
-            Text("이메일", style: TextStyle(fontWeight: FontWeight.bold)),
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(
-                hintText: "이메일을 입력하세요",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            SizedBox(height: 2.h),
-            Text("주소", style: TextStyle(fontWeight: FontWeight.bold)),
-            TextField(
-              controller: addressController,
-              decoration: InputDecoration(
-                hintText: "주소를 입력하세요",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            SizedBox(height: 4.h),
-            SizedBox(
-              width: double.infinity,
-              height: 6.h,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7BAFD4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                SizedBox(height: 2.2.h),
+
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: _inputDecoration(
+                    "이메일",
+                    FontAwesomeIcons.solidEnvelope,
                   ),
                 ),
-                onPressed: isProcessing ? null : _saveProfile,
-                child:
-                    isProcessing
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                          "저장",
-                          style: TextStyle(color: Colors.white),
-                        ),
-              ),
+                SizedBox(height: 2.2.h),
+
+                TextField(
+                  controller: addressController,
+                  decoration: _inputDecoration(
+                    "주소",
+                    FontAwesomeIcons.locationDot,
+                  ),
+                ),
+                SizedBox(height: 2.2.h),
+
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: _inputDecoration(
+                    "새 비밀번호(미입력시 변경 안함)",
+                    FontAwesomeIcons.lock,
+                  ),
+                ),
+
+                SizedBox(height: 4.h),
+                SizedBox(
+                  width: double.infinity,
+                  height: 6.h,
+                  child: ElevatedButton.icon(
+                    icon: FaIcon(
+                      FontAwesomeIcons.solidFloppyDisk,
+                      size: 18.sp,
+                      color: Colors.white,
+                    ),
+                    label:
+                        isProcessing
+                            ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                            : Text(
+                              "저장",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF7BAFD4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: isProcessing ? null : _saveProfile,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

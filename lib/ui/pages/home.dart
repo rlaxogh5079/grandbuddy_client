@@ -11,38 +11,6 @@ import 'package:grandbuddy_client/utils/req/user.dart';
 import 'package:grandbuddy_client/utils/req/request.dart';
 import 'package:grandbuddy_client/ui/widgets/drawer.dart';
 
-Color getStatusColor(String status) {
-  switch (status) {
-    case "pending":
-      return const Color(0xFF7BAFD4);
-    case "accepted":
-      return Colors.green;
-    case "completed":
-      return Colors.blue;
-    case "canceled":
-    case "canceld":
-      return Colors.red;
-    default:
-      return Colors.grey;
-  }
-}
-
-String getStatusText(String status) {
-  switch (status) {
-    case "pending":
-      return "대기 중";
-    case "accepted":
-      return "매칭됨";
-    case "completed":
-      return "완료됨";
-    case "canceled":
-    case "canceld":
-      return "취소됨";
-    default:
-      return "알 수 없음";
-  }
-}
-
 class GBHomePage extends StatefulWidget {
   const GBHomePage({Key? key}) : super(key: key);
 

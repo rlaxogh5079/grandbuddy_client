@@ -16,7 +16,7 @@ import 'package:grandbuddy_client/utils/req/request.dart';
 Color getStatusColor(String status) {
   switch (status) {
     case "pending":
-      return const Color(0xFF7BAFD4);
+      return Colors.orange;
     case "accepted":
       return Colors.green;
     case "completed":
@@ -45,6 +45,7 @@ String getStatusText(String status) {
   }
 }
 
+// ignore: must_be_immutable
 class RequestDetailPage extends StatefulWidget {
   final String requestUuid;
   final String userRole; // "senior" 또는 "youth"
@@ -96,7 +97,7 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
 
   Future<void> _fetchApplicationsAndStatus() async {
     final res = await getApplicationsByRequest(widget.requestUuid);
-    applications = res.applications ?? [];
+    applications = res.applications;
 
     hasApplied = false;
     myApplication = null;
@@ -200,7 +201,7 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
       createSmoothDialog(
         context,
         "오류",
-        Text(result.message ?? "취소 실패"),
+        Text(result.message),
         TextButton(
           child: const Text("닫기", style: TextStyle(color: Color(0xFF7BAFD4))),
           onPressed: () => Navigator.pop(context),

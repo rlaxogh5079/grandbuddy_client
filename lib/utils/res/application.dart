@@ -13,17 +13,6 @@ class Application {
     required this.created,
   });
 
-  @override
-  Map toJson() {
-    return {
-      "applicationUuid": applicationUuid,
-      "requestUuid": requestUuid,
-      "youthUuid": youthUuid,
-      "status": status,
-      "created": created,
-    };
-  }
-
   factory Application.fromJson(Map<String, dynamic> json) {
     return Application(
       applicationUuid: json["application_uuid"] as String,

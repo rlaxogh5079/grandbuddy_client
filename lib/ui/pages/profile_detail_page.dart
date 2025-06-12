@@ -1,12 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:grandbuddy_client/ui/pages/user_match.dart';
+import 'package:grandbuddy_client/ui/pages/user_request.dart';
 import 'package:grandbuddy_client/utils/res/user.dart';
+import 'package:grandbuddy_client/utils/res/match.dart';
+import 'package:grandbuddy_client/utils/res/request.dart';
+import 'package:grandbuddy_client/utils/req/match.dart';
+import 'package:grandbuddy_client/utils/req/request.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:intl/intl.dart';
 
-class ProfileDetailPage extends StatelessWidget {
+class ProfileDetailPage extends StatefulWidget {
   final User user;
-
   const ProfileDetailPage({Key? key, required this.user}) : super(key: key);
+
+  @override
+  State<ProfileDetailPage> createState() => _ProfileDetailPageState();
+}
+
+class _ProfileDetailPageState extends State<ProfileDetailPage> {
+  late Future<List<Match>> matchesFuture;
+  late Future<List<Request>> requestsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // (1) 매칭 불러오기 (본인이 청년/노인 모두 포함)
+    matchesFuture = fetchUserAllMatches(widget.user.userUuid);
+    // (2) 등록 요청글 불러오기 (노인)
+    requestsFuture = fetchUserRequests(widget.user.userUuid);
+  }
 
   String getRoleKor(String? role) {
     if (role == "senior") return "노인";
@@ -39,15 +61,26 @@ class ProfileDetailPage extends StatelessWidget {
     }
   }
 
+  Future<List<Request>> fetchUserRequests(String userUuid) async {
+    final res = await getRequestByUserUuid(userUuid);
+    return res.requests ?? [];
+  }
+
+  Future<List<Match>> fetchUserAllMatches(String userUuid) async {
+    final res = await getMatchByUserUuid(userUuid); // 직접 구현 필요
+    return res.matches ?? [];
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeColor = const Color(0xFF7BAFD4);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: themeColor,
         elevation: 0,
         title: Text(
-          '${user.nickname}님의 프로필',
+          '${widget.user.nickname}님의 프로필',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -76,13 +109,13 @@ class ProfileDetailPage extends StatelessWidget {
                           radius: 32.sp,
                           backgroundColor: themeColor.withOpacity(0.08),
                           backgroundImage:
-                              user.profile != null
+                              widget.user.profile != null
                                   ? NetworkImage(
-                                    "http://3.27.71.121:8000${user.profile}",
+                                    "http://3.27.71.121:8000${widget.user.profile}",
                                   )
                                   : null,
                           child:
-                              user.profile == null
+                              widget.user.profile == null
                                   ? Icon(
                                     Icons.person,
                                     size: 44.sp,
@@ -94,7 +127,7 @@ class ProfileDetailPage extends StatelessWidget {
                       SizedBox(height: 1.7.h),
                       Center(
                         child: Text(
-                          user.nickname,
+                          widget.user.nickname,
                           style: TextStyle(
                             fontSize: 21.sp,
                             fontWeight: FontWeight.bold,
@@ -105,7 +138,7 @@ class ProfileDetailPage extends StatelessWidget {
                       SizedBox(height: 0.6.h),
                       Center(
                         child: Text(
-                          getRoleKor(user.role),
+                          getRoleKor(widget.user.role),
                           style: TextStyle(
                             fontSize: 15.sp,
                             color: themeColor,
@@ -119,7 +152,7 @@ class ProfileDetailPage extends StatelessWidget {
                         dense: true,
                         leading: Icon(Icons.email, color: themeColor),
                         title: Text(
-                          user.email,
+                          widget.user.email,
                           style: TextStyle(fontSize: 15.sp),
                         ),
                       ),
@@ -127,13 +160,13 @@ class ProfileDetailPage extends StatelessWidget {
                         dense: true,
                         leading: Icon(Icons.location_on, color: themeColor),
                         title: Text(
-                          getBaseAddress(user.address) ?? "-",
+                          getBaseAddress(widget.user.address) ?? "-",
                           style: TextStyle(fontSize: 15.sp),
                         ),
                         subtitle:
-                            getDetailAddress(user.address) != null
+                            getDetailAddress(widget.user.address) != null
                                 ? Text(
-                                  getDetailAddress(user.address)!,
+                                  getDetailAddress(widget.user.address)!,
                                   style: TextStyle(
                                     fontSize: 13.sp,
                                     color: Colors.grey[600],
@@ -145,7 +178,7 @@ class ProfileDetailPage extends StatelessWidget {
                         dense: true,
                         leading: Icon(Icons.cake, color: themeColor),
                         title: Text(
-                          "생일: ${formatDate(user.birthDay)}",
+                          "생일: ${formatDate(widget.user.birthDay)}",
                           style: TextStyle(fontSize: 15.sp),
                         ),
                       ),
@@ -153,7 +186,7 @@ class ProfileDetailPage extends StatelessWidget {
                         dense: true,
                         leading: Icon(Icons.calendar_today, color: themeColor),
                         title: Text(
-                          "가입일: ${formatDate(user.created)}",
+                          "가입일: ${formatDate(widget.user.created)}",
                           style: TextStyle(fontSize: 15.sp),
                         ),
                       ),
@@ -162,81 +195,128 @@ class ProfileDetailPage extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 2.h),
-
-              // 하단 카드 - 활동 정보
+              // 매칭/게시글 정보 카드
               Row(
                 children: [
+                  // 매칭 횟수 카드
                   Expanded(
-                    child: Card(
-                      color: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 2.2.h),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.people_alt_rounded,
-                              size: 26.sp,
-                              color: themeColor,
+                    child: FutureBuilder<List<Match>>(
+                      future: matchesFuture,
+                      builder: (context, snapshot) {
+                        final count = snapshot.data?.length ?? 0;
+                        return GestureDetector(
+                          onTap:
+                              snapshot.hasData
+                                  ? () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => UserMatchListPage(
+                                              matches: snapshot.data!,
+                                              user: widget.user,
+                                            ),
+                                      ),
+                                    );
+                                  }
+                                  : null,
+                          child: Card(
+                            color: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            SizedBox(height: 0.7.h),
-                            Text(
-                              '매칭 횟수',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.grey[700],
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 2.2.h),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.people_alt_rounded,
+                                    size: 26.sp,
+                                    color: themeColor,
+                                  ),
+                                  SizedBox(height: 0.7.h),
+                                  Text(
+                                    '매칭 횟수',
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                  Text(
+                                    '$count',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 17.sp,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Text(
-                              '0', // TODO: 실제 값 넣기
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 17.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   SizedBox(width: 2.w),
+                  // 게시글 수 카드
                   Expanded(
-                    child: Card(
-                      color: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 2.2.h),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.list_alt_rounded,
-                              size: 26.sp,
-                              color: themeColor,
+                    child: FutureBuilder<List<Request>>(
+                      future: requestsFuture,
+                      builder: (context, snapshot) {
+                        final count = snapshot.data?.length ?? 0;
+                        return GestureDetector(
+                          onTap:
+                              snapshot.hasData
+                                  ? () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => UserRequestListPage(
+                                              requests: snapshot.data!,
+                                              user: widget.user,
+                                            ),
+                                      ),
+                                    );
+                                  }
+                                  : null,
+                          child: Card(
+                            color: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            SizedBox(height: 0.7.h),
-                            Text(
-                              '등록 게시글',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.grey[700],
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 2.2.h),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.list_alt_rounded,
+                                    size: 26.sp,
+                                    color: themeColor,
+                                  ),
+                                  SizedBox(height: 0.7.h),
+                                  Text(
+                                    '등록 게시글',
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                  Text(
+                                    '$count',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 17.sp,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Text(
-                              '0', // TODO: 실제 값 넣기
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 17.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -249,3 +329,5 @@ class ProfileDetailPage extends StatelessWidget {
     );
   }
 }
+
+// ---- API 통신부 (예시, 실제 서버/파라미터에 맞게 수정) ----

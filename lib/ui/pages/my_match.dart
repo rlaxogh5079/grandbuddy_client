@@ -135,7 +135,8 @@ class _GBMyMatchPageState extends State<GBMyMatchPage> {
                     },
                     // 여기 child에 상대방 정보
                     child:
-                        other != null
+                        other != null &&
+                                data[index].seniorUuid != other.userUuid
                             ? Row(
                               children: [
                                 CircleAvatar(

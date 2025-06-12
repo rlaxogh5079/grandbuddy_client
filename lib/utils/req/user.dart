@@ -71,3 +71,27 @@ Future<ProfileResponse> getUserByUuid(String uuid) async {
   String responseBody = utf8.decoder.convert(response.bodyBytes);
   return ProfileResponse.fromJson(json.decode(responseBody));
 }
+
+Future<ProfileResponse> updateUser(
+  String accessToken,
+  String? password,
+  String? nickname,
+  String? email,
+  String? address,
+) async {
+  final response = await http.patch(
+    Uri.parse(host),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $accessToken",
+    },
+    body: {
+      "password": password,
+      "nickname": nickname,
+      "email": email,
+      "address": address,
+    },
+  );
+  String responseBody = utf8.decoder.convert(response.bodyBytes);
+  return ProfileResponse.fromJson(json.decode(responseBody));
+}

@@ -82,3 +82,14 @@ Future<GeneralResponse> completeMatch(
   String responseBody = utf8.decoder.convert(response.bodyBytes);
   return GeneralResponse.fromJson(json.decode(responseBody));
 }
+
+Future<MatchesResponse> getMatchByUserUuid(String userUuid) async {
+  final response = await http.get(
+    Uri.parse("$host/user/$userUuid"),
+    headers: {"Content-Type": "application/json"},
+  );
+
+  String responseBody = utf8.decoder.convert(response.bodyBytes);
+  print(responseBody);
+  return MatchesResponse.fromJson(json.decode(responseBody));
+}

@@ -128,3 +128,14 @@ Future<RequestResponse> cancelRequest(
   String responseBody = utf8.decoder.convert(response.bodyBytes);
   return RequestResponse.fromJson(json.decode(responseBody));
 }
+
+Future<RequestListResponse> getRequestByUserUuid(String userUuid) async {
+  final response = await http.get(
+    Uri.parse("$host/user/$userUuid"),
+    headers: {"Content-Type": "application/json"},
+  );
+
+  String responseBody = utf8.decoder.convert(response.bodyBytes);
+  print(responseBody);
+  return RequestListResponse.fromJson(json.decode(responseBody));
+}

@@ -10,6 +10,7 @@ class RequestCard extends StatelessWidget {
   final User? senior;
   final VoidCallback? onTap;
   final Widget? child; // << 추가! 하단에 표시할 custom 위젯
+  final bool isShowSenior;
 
   const RequestCard({
     Key? key,
@@ -17,12 +18,13 @@ class RequestCard extends StatelessWidget {
     this.senior,
     this.onTap,
     this.child,
+    this.isShowSenior = true,
   }) : super(key: key);
 
   Color getStatusColor(String status) {
     switch (status) {
       case "pending":
-        return const Color(0xFF7BAFD4);
+        return Colors.orange;
       case "accepted":
         return Colors.green;
       case "completed":
@@ -266,10 +268,7 @@ class RequestCard extends StatelessWidget {
                   ],
                 ),
 
-              if (child != null && request.status != "accepted") ...[
-                SizedBox(height: 2.h),
-                child!,
-              ],
+              if (child != null) ...[SizedBox(height: 2.h), child!],
             ],
           ),
         ),
