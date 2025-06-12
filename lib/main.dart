@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:grandbuddy_client/ui/pages/auth.dart';
 
-void main() {
+void main() async {
   runApp(const GBApp());
 }
 

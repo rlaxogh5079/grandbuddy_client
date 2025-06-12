@@ -40,6 +40,9 @@ dependencies:
   http: ^1.4.0
   fluttertoast: ^8.2.12
   intl: ^0.20.2
+  web_socket_channel: ^3.0.3
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:

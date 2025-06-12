@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:grandbuddy_client/ui/pages/add_request.dart';
+import 'package:grandbuddy_client/ui/pages/chat_list_page.dart';
 import 'package:grandbuddy_client/ui/pages/request_detail.dart';
 import 'package:grandbuddy_client/ui/widgets/drawer.dart';
 import 'package:grandbuddy_client/utils/req/application.dart';
+import 'package:grandbuddy_client/utils/req/match.dart';
+import 'package:grandbuddy_client/utils/req/message.dart';
 import 'package:grandbuddy_client/utils/req/user.dart';
 import 'package:grandbuddy_client/utils/req/request.dart';
 import 'package:grandbuddy_client/utils/res/request.dart';
@@ -113,7 +116,51 @@ class _GBHomePageState extends State<GBHomePage> {
         actions: [
           IconButton(
             icon: const Icon(FontAwesomeIcons.comments, color: Colors.white),
-            onPressed: () {},
+            onPressed: () async {
+              final accessToken =
+                  await SecureStorage().storage.read(key: "access_token") ?? "";
+              final profile = await getProfile(accessToken);
+              final myUser = profile.user!;
+              final matchRes = await getMyMatch(accessToken);
+
+              final List<Map<String, String>> chats = [];
+              final Set<String> addedUuids = {};
+              if (matchRes.matches != null) {
+                for (final match in matchRes.matches!) {
+                  final reqRes = await getRequestByUuid(match.requestUuid);
+                  if (reqRes.request == null) continue;
+                  final req = reqRes.request!;
+
+                  final isSenior = myUser.role == "senior";
+                  final otherUuid = isSenior ? match.youthUuid : req.seniorUuid;
+
+                  if (otherUuid.isEmpty || addedUuids.contains(otherUuid))
+                    continue;
+
+                  final otherUserRes = await getUserByUuid(otherUuid);
+                  if (otherUserRes.user == null) continue;
+                  final other = otherUserRes.user!;
+                  addedUuids.add(otherUuid); // ✅ 여기에 옮김
+
+                  final msgRes = await getLastMessage(match.matchUuid);
+                  final lastMsg = msgRes?["message"] ?? "";
+
+                  chats.add({
+                    "name": other.nickname,
+                    "lastMessage": lastMsg,
+                    "matchUuid": match.matchUuid,
+                    "senderUuid": myUser.userUuid,
+                    "receiverUuid": other.userUuid,
+                    "profile": other.profile ?? "",
+                  });
+                }
+              }
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ChatListPage(chats: chats)),
+              );
+            },
           ),
           SizedBox(width: 5.w),
         ],
