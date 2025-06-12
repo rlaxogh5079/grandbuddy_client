@@ -44,7 +44,7 @@ class ChatListPage extends StatelessWidget {
                   final profile = chat["profile"];
 
                   return InkWell(
-                    onTap: () {
+                    onTap: () async {
                       Navigator.push(
                         context,
                         MaterialPageRoute(

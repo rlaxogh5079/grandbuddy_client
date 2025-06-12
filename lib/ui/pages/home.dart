@@ -62,7 +62,10 @@ class _GBHomePageState extends State<GBHomePage> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(FontAwesomeIcons.comments, color: Colors.white),
+            icon: const Icon(
+              FontAwesomeIcons.solidComment,
+              color: Colors.white,
+            ),
             onPressed: () async {
               final accessToken =
                   await SecureStorage().storage.read(key: "access_token") ?? "";

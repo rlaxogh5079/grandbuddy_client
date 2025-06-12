@@ -198,11 +198,18 @@ class _ChatPageState extends State<ChatPage> {
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: "메시지 입력",
-                      border: OutlineInputBorder(),
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom + 10,
+                      left: 10,
+                      right: 10,
+                    ),
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        hintText: "메시지 입력",
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                   ),
                 ),
