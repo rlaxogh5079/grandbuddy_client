@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:grandbuddy_client/utils/res/request.dart';
 import 'package:http/http.dart' as http;
 import 'package:grandbuddy_client/utils/res/application.dart'; // response 모델
 
@@ -36,9 +37,7 @@ Future<bool> rejectApplication({
   required String youthUuid,
 }) async {
   final response = await http.post(
-    Uri.parse(
-      "http://3.27.71.121:8000/application/$requestUuid/reject/$youthUuid",
-    ),
+    Uri.parse("http://3.27.71.121:8000/request/$requestUuid/reject/$youthUuid"),
     headers: {
       "Content-Type": "application/json",
       "Authorization": "Bearer $accessToken",
@@ -47,7 +46,7 @@ Future<bool> rejectApplication({
   return response.statusCode == 200 || response.statusCode == 201;
 }
 
-Future<ApplicationListResponse> getMyApplications(String accessToken) async {
+Future<RequestListResponse> getMyApplications(String accessToken) async {
   final response = await http.get(
     Uri.parse("http://3.27.71.121:8000/request/applied/me"),
     headers: {
@@ -57,5 +56,5 @@ Future<ApplicationListResponse> getMyApplications(String accessToken) async {
   );
 
   String responseBody = utf8.decoder.convert(response.bodyBytes);
-  return ApplicationListResponse.fromJson(json.decode(responseBody));
+  return RequestListResponse.fromJson(json.decode(responseBody));
 }

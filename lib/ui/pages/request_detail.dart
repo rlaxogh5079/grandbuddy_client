@@ -167,6 +167,7 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
           backgroundColor: const Color(0xFF7BAFD4),
         ),
       );
+      Navigator.pop(context, true);
     } else {
       createSmoothDialog(
         context,

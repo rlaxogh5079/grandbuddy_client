@@ -214,7 +214,6 @@ class _UserMatchListPageState extends State<UserMatchListPage> {
                   final senior = seniors[idx];
                   return RequestCard(
                     request: req,
-                    isShowSenior: false,
                     onTap: () {
                       Navigator.push(
                         context,

@@ -147,7 +147,13 @@ class _ReceivedApplicationsPageState extends State<ReceivedApplicationsPage> {
                 itemCount: myRequests.length,
                 itemBuilder: (context, idx) {
                   final req = myRequests[idx];
-                  final apps = appMap[req.requestUuid] ?? [];
+                  List<Application> apps = appMap[req.requestUuid] ?? [];
+
+                  // ✅ match 성사 상태면 accepted된 사용자만 보여줌
+                  if (apps.any((a) => a.status == "accepted")) {
+                    apps = apps.where((a) => a.status == "accepted").toList();
+                  }
+
                   return RequestCard(
                     request: req,
                     senior: myUser,
@@ -205,7 +211,6 @@ class _ReceivedApplicationsPageState extends State<ReceivedApplicationsPage> {
                                         ),
                                         leading: GestureDetector(
                                           onTap: () {
-                                            // 청년 상세 프로필로 이동
                                             if (youth != null) {
                                               Navigator.push(
                                                 context,

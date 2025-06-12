@@ -136,6 +136,5 @@ Future<RequestListResponse> getRequestByUserUuid(String userUuid) async {
   );
 
   String responseBody = utf8.decoder.convert(response.bodyBytes);
-  print(responseBody);
   return RequestListResponse.fromJson(json.decode(responseBody));
 }

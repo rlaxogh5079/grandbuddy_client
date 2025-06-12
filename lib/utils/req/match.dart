@@ -22,22 +22,6 @@ Future<MatchCreateResponse> createMatch(
   return MatchCreateResponse.fromJson(json.decode(responseBody));
 }
 
-Future<MatchResponse> searchMatch(
-  String accessToken,
-  String requestUuid,
-) async {
-  http.Response response = await http.get(
-    Uri.parse("$host?request_uuid=$requestUuid"),
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $accessToken",
-    },
-  );
-
-  String responseBody = utf8.decoder.convert(response.bodyBytes);
-  return MatchResponse.fromJson(json.decode(responseBody));
-}
-
 Future<MatchesResponse> getMyMatch(String accessToken) async {
   http.Response response = await http.get(
     Uri.parse("$host/me"),
@@ -51,16 +35,10 @@ Future<MatchesResponse> getMyMatch(String accessToken) async {
   return MatchesResponse.fromJson(json.decode(responseBody));
 }
 
-Future<GeneralResponse> deleteMatch(
-  String accessToken,
-  String requestUuid,
-) async {
+Future<GeneralResponse> deleteMatch(String matchUuid) async {
   http.Response response = await http.delete(
-    Uri.parse("$host/$requestUuid"),
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $accessToken",
-    },
+    Uri.parse("$host/$matchUuid"),
+    headers: {"Content-Type": "application/json"},
   );
 
   String responseBody = utf8.decoder.convert(response.bodyBytes);
@@ -90,6 +68,14 @@ Future<MatchesResponse> getMatchByUserUuid(String userUuid) async {
   );
 
   String responseBody = utf8.decoder.convert(response.bodyBytes);
-  print(responseBody);
   return MatchesResponse.fromJson(json.decode(responseBody));
+}
+
+Future<MatchResponse> getMatchByRequestUuid(String requestUuid) async {
+  final response = await http.get(
+    Uri.parse("$host/$requestUuid"),
+    headers: {"Content-Type": "application/json"},
+  );
+  String responseBody = utf8.decoder.convert(response.bodyBytes);
+  return MatchResponse.fromJson(json.decode(responseBody));
 }

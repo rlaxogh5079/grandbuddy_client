@@ -197,9 +197,11 @@ class _ProfileDetailPageState extends State<ProfileDetailPage> {
               SizedBox(height: 2.h),
               // 매칭/게시글 정보 카드
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // 매칭 횟수 카드
-                  Expanded(
+                  Container(
+                    width: 40.w,
                     child: FutureBuilder<List<Match>>(
                       future: matchesFuture,
                       builder: (context, snapshot) {
@@ -260,65 +262,67 @@ class _ProfileDetailPageState extends State<ProfileDetailPage> {
                   ),
                   SizedBox(width: 2.w),
                   // 게시글 수 카드
-                  Expanded(
-                    child: FutureBuilder<List<Request>>(
-                      future: requestsFuture,
-                      builder: (context, snapshot) {
-                        final count = snapshot.data?.length ?? 0;
-                        return GestureDetector(
-                          onTap:
-                              snapshot.hasData
-                                  ? () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (_) => UserRequestListPage(
-                                              requests: snapshot.data!,
-                                              user: widget.user,
-                                            ),
+                  if (widget.user.role == "senior")
+                    Container(
+                      width: 40.w,
+                      child: FutureBuilder<List<Request>>(
+                        future: requestsFuture,
+                        builder: (context, snapshot) {
+                          final count = snapshot.data?.length ?? 0;
+                          return GestureDetector(
+                            onTap:
+                                snapshot.hasData
+                                    ? () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (_) => UserRequestListPage(
+                                                requests: snapshot.data!,
+                                                user: widget.user,
+                                              ),
+                                        ),
+                                      );
+                                    }
+                                    : null,
+                            child: Card(
+                              color: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 2.2.h),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.list_alt_rounded,
+                                      size: 26.sp,
+                                      color: themeColor,
+                                    ),
+                                    SizedBox(height: 0.7.h),
+                                    Text(
+                                      '등록 게시글',
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        color: Colors.grey[700],
                                       ),
-                                    );
-                                  }
-                                  : null,
-                          child: Card(
-                            color: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 2.2.h),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.list_alt_rounded,
-                                    size: 26.sp,
-                                    color: themeColor,
-                                  ),
-                                  SizedBox(height: 0.7.h),
-                                  Text(
-                                    '등록 게시글',
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      color: Colors.grey[700],
                                     ),
-                                  ),
-                                  Text(
-                                    '$count',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 17.sp,
+                                    Text(
+                                      '$count',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 17.sp,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                  ),
                 ],
               ),
               SizedBox(height: 2.h),

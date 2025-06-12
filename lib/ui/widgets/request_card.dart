@@ -10,7 +10,6 @@ class RequestCard extends StatelessWidget {
   final User? senior;
   final VoidCallback? onTap;
   final Widget? child; // << 추가! 하단에 표시할 custom 위젯
-  final bool isShowSenior;
 
   const RequestCard({
     Key? key,
@@ -18,7 +17,6 @@ class RequestCard extends StatelessWidget {
     this.senior,
     this.onTap,
     this.child,
-    this.isShowSenior = true,
   }) : super(key: key);
 
   Color getStatusColor(String status) {
@@ -58,7 +56,10 @@ class RequestCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.2.h),
+        margin: EdgeInsets.symmetric(
+          horizontal: 4.w,
+          vertical: (senior == null || child == null) ? 1.h : 0.h,
+        ),
         elevation: 3,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
@@ -66,7 +67,6 @@ class RequestCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 제목, 상태
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

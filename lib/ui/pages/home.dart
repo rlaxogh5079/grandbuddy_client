@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:grandbuddy_client/ui/pages/add_request.dart';
 import 'package:grandbuddy_client/ui/pages/request_detail.dart';
-import 'package:grandbuddy_client/ui/widgets/request_card.dart';
-import 'package:grandbuddy_client/utils/secure_storage.dart';
-import 'package:responsive_sizer/responsive_sizer.dart';
-import 'package:grandbuddy_client/utils/res/user.dart';
-import 'package:grandbuddy_client/utils/res/request.dart';
+import 'package:grandbuddy_client/ui/widgets/drawer.dart';
+import 'package:grandbuddy_client/utils/req/application.dart';
 import 'package:grandbuddy_client/utils/req/user.dart';
 import 'package:grandbuddy_client/utils/req/request.dart';
-import 'package:grandbuddy_client/ui/widgets/drawer.dart';
+import 'package:grandbuddy_client/utils/res/request.dart';
+import 'package:grandbuddy_client/utils/res/user.dart';
+import 'package:grandbuddy_client/utils/secure_storage.dart';
+import 'package:grandbuddy_client/ui/widgets/request_card.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 
 class GBHomePage extends StatefulWidget {
   const GBHomePage({Key? key}) : super(key: key);
@@ -22,9 +23,9 @@ class _GBHomePageState extends State<GBHomePage> {
   User? user;
   List<Request> requests = [];
   Map<String, User> seniorMap = {};
-  String accessToken = '';
   bool isLoadingProfile = true;
   bool isLoadingRequest = true;
+  String accessToken = '';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -39,47 +40,66 @@ class _GBHomePageState extends State<GBHomePage> {
   }
 
   Future<void> _loadProfile() async {
-    String token =
-        await SecureStorage().storage.read(key: "access_token") ?? '';
-    final profile = await getProfile(token);
-    if (mounted) {
-      setState(() {
-        user = profile.user;
-        accessToken = token;
-      });
-    }
+    accessToken = await SecureStorage().storage.read(key: "access_token") ?? '';
+    final profile = await getProfile(accessToken);
+    setState(() {
+      user = profile.user;
+      isLoadingProfile = false;
+    });
   }
 
   Future<void> _loadRequestList() async {
-    final response = await getRequestExplore();
-    final fetchedRequests = response.requests ?? [];
-    final seniorUuids = fetchedRequests.map((e) => e.seniorUuid).toSet();
+    setState(() => isLoadingRequest = true);
 
-    for (String uuid in seniorUuids) {
-      try {
-        final response = await getUserByUuid(uuid);
-        seniorMap[uuid] = response.user!;
-      } catch (e) {
-        print("유저 정보 불러오기 실패: $e");
+    accessToken = await SecureStorage().storage.read(key: "access_token") ?? "";
+    final profile = await getProfile(accessToken);
+    user = profile.user;
+
+    final response = await getRequestExplore(); // 전체 요청
+    final fetched = response.requests ?? [];
+
+    List<Request> filtered = fetched;
+
+    // ✅ 유저가 청년이면 내가 신청한 요청 제외
+    if (user?.role == "youth") {
+      final appsRes = await getMyApplications(accessToken); // 내가 신청한 모든 요청
+      final myRequestUuids =
+          appsRes.requests?.map((a) => a.requestUuid).toSet();
+
+      filtered =
+          fetched
+              .where((r) => !myRequestUuids!.contains(r.requestUuid))
+              .toList();
+    }
+
+    // senior 정보 불러오기
+    final seniorUuids = filtered.map((r) => r.seniorUuid).toSet();
+    seniorMap.clear();
+    for (var uuid in seniorUuids) {
+      final res = await getUserByUuid(uuid);
+      if (res.statusCode == 200 && res.user != null) {
+        seniorMap[uuid] = res.user!;
       }
     }
 
-    if (mounted) {
-      setState(() {
-        requests = fetchedRequests;
-        isLoadingRequest = false;
-      });
-    }
+    setState(() {
+      requests = filtered;
+      isLoadingRequest = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F8F5),
       key: _scaffoldKey,
+      backgroundColor: const Color(0xFFF9F8F5),
       drawer: CustomDrawer(user: user),
       appBar: AppBar(
         backgroundColor: const Color(0xFF7BAFD4),
+        leading: IconButton(
+          icon: const Icon(FontAwesomeIcons.bars, color: Colors.white),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        ),
         title: Center(
           child: Text(
             "홈페이지",
@@ -88,16 +108,6 @@ class _GBHomePageState extends State<GBHomePage> {
               fontSize: 17.sp,
               fontWeight: FontWeight.bold,
             ),
-          ),
-        ),
-        leading: Padding(
-          padding: EdgeInsets.only(left: 5.w),
-          child: IconButton(
-            icon: const Icon(FontAwesomeIcons.bars),
-            color: Colors.white,
-            onPressed: () {
-              _scaffoldKey.currentState!.openDrawer();
-            },
           ),
         ),
         actions: [
@@ -115,25 +125,25 @@ class _GBHomePageState extends State<GBHomePage> {
               ? const Center(child: Text("요청 목록이 없습니다."))
               : ListView.builder(
                 itemCount: requests.length,
-                itemBuilder: (context, index) {
-                  final request = requests[index];
-                  final senior = seniorMap[request.seniorUuid];
+                itemBuilder: (context, idx) {
+                  final req = requests[idx];
+                  final senior = seniorMap[req.seniorUuid];
                   return RequestCard(
-                    request: request,
+                    request: req,
                     senior: senior,
                     onTap: () async {
-                      bool? result = await Navigator.push(
+                      // detail에서 true 리턴받으면 새로고침
+                      final changed = await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) => RequestDetailPage(
-                                requestUuid: request.requestUuid,
+                              (_) => RequestDetailPage(
+                                requestUuid: req.requestUuid,
                                 userRole: user!.role,
                               ),
                         ),
                       );
-                      if (result == true) {
-                        requests = [];
+                      if (changed == true) {
                         _loadRequestList();
                       }
                     },
@@ -141,7 +151,7 @@ class _GBHomePageState extends State<GBHomePage> {
                 },
               ),
       floatingActionButton:
-          user?.role == 'senior' && user?.userUuid != null
+          user?.role == 'senior'
               ? Padding(
                 padding: EdgeInsets.only(right: 5.w),
                 child: FloatingActionButton(

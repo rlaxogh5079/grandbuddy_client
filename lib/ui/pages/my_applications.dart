@@ -34,12 +34,11 @@ class _MyApplicationsPageState extends State<MyApplicationsPage> {
 
     for (String uuid in seniorUuids) {
       try {
-        final seniorRes = await getProfile(uuid);
+        final seniorRes = await getUserByUuid(uuid);
         seniorMap[uuid] = seniorRes.user!;
       } catch (e) {}
     }
 
-    // 반드시 프레임 뒤에서 setState + mounted 체크!
     if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
