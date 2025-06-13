@@ -29,13 +29,22 @@ class _MyRequestsPageState extends State<MyRequestsPage> {
   Future<void> _fetchMyRequests() async {
     final accessToken = await SecureStorage().storage.read(key: "access_token");
     final response = await getRequestsBySenior(accessToken ?? "");
-    final reqs = response.requests ?? [];
+    List<Request> reqs = response.requests ?? [];
+
+    // 요청 상태에 따라 정렬 (매칭됨 > 대기중 > 완료됨 순)
+    reqs.sort((a, b) {
+      int statusA = _getRequestStatusPriority(a.status);
+      int statusB = _getRequestStatusPriority(b.status);
+      return statusA.compareTo(statusB);
+    });
+
     if (reqs.isNotEmpty) {
       final userRes = await getProfile(accessToken ?? "");
       for (var r in reqs) {
         seniorMap[r.seniorUuid] = userRes.user!;
       }
     }
+
     if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -44,6 +53,20 @@ class _MyRequestsPageState extends State<MyRequestsPage> {
         isLoading = false;
       });
     });
+  }
+
+  // 요청 상태를 우선순위에 맞게 반환하는 함수
+  int _getRequestStatusPriority(String status) {
+    switch (status) {
+      case "accepted":
+        return 1; // 매칭됨
+      case "pending":
+        return 2; // 대기중
+      case "completed":
+        return 3; // 완료됨
+      default:
+        return 4; // 기타 상태는 마지막에
+    }
   }
 
   @override

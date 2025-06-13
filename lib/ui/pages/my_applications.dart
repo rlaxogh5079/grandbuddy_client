@@ -29,7 +29,15 @@ class _MyApplicationsPageState extends State<MyApplicationsPage> {
   Future<void> _fetchMyApplications() async {
     final accessToken = await SecureStorage().storage.read(key: "access_token");
     final response = await getRequestsByApplicant(accessToken ?? "");
-    final reqs = response.requests ?? [];
+    List<Request> reqs = response.requests ?? [];
+
+    // 요청 상태에 따라 정렬 (매칭됨 > 대기중 > 거절됨 순)
+    reqs.sort((a, b) {
+      int statusA = _getRequestStatusPriority(a.status);
+      int statusB = _getRequestStatusPriority(b.status);
+      return statusA.compareTo(statusB);
+    });
+
     final seniorUuids = reqs.map((e) => e.seniorUuid).toSet();
 
     for (String uuid in seniorUuids) {
@@ -47,6 +55,20 @@ class _MyApplicationsPageState extends State<MyApplicationsPage> {
         isLoading = false;
       });
     });
+  }
+
+  // 요청 상태를 우선순위에 맞게 반환하는 함수
+  int _getRequestStatusPriority(String status) {
+    switch (status) {
+      case "accepted":
+        return 1; // 매칭됨
+      case "pending":
+        return 2; // 대기중
+      case "rejected":
+        return 3; // 거절됨
+      default:
+        return 4; // 기타 상태는 마지막에
+    }
   }
 
   @override

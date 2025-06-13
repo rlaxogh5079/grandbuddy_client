@@ -47,6 +47,14 @@ class _ReceivedApplicationsPageState extends State<ReceivedApplicationsPage> {
     myUser = myRes.user;
     final myReqRes = await getRequestsBySenior(accessToken);
     final requests = myReqRes.requests ?? [];
+
+    // 요청을 상태에 따라 정렬 (매칭됨 > 대기중 > 완료됨 순)
+    requests.sort((a, b) {
+      int statusA = _getRequestStatusPriority(a.status);
+      int statusB = _getRequestStatusPriority(b.status);
+      return statusA.compareTo(statusB);
+    });
+
     for (final req in requests) {
       final appsRes = await getApplicationsByRequest(req.requestUuid);
       appMap[req.requestUuid] = appsRes.applications;
@@ -62,6 +70,20 @@ class _ReceivedApplicationsPageState extends State<ReceivedApplicationsPage> {
       myRequests = requests;
       isLoading = false;
     });
+  }
+
+  // 요청 상태를 우선순위에 맞게 반환하는 함수
+  int _getRequestStatusPriority(String status) {
+    switch (status) {
+      case "accepted":
+        return 1; // 매칭됨
+      case "pending":
+        return 2; // 대기중
+      case "completed":
+        return 3; // 완료됨
+      default:
+        return 4; // 기타 상태는 마지막에
+    }
   }
 
   // 상태 뱃지 위젯
@@ -80,6 +102,10 @@ class _ReceivedApplicationsPageState extends State<ReceivedApplicationsPage> {
       case "rejected":
         color = Colors.red.shade100;
         text = "거절됨";
+        break;
+      case "completed":
+        color = Colors.grey.shade300;
+        text = "완료됨";
         break;
       default:
         color = Colors.grey.shade200;
@@ -149,10 +175,17 @@ class _ReceivedApplicationsPageState extends State<ReceivedApplicationsPage> {
                   final req = myRequests[idx];
                   List<Application> apps = appMap[req.requestUuid] ?? [];
 
-                  // ✅ match 성사 상태면 accepted된 사용자만 보여줌
+                  // 요청 상태에 따라 신청을 필터링 (매칭된 사용자만)
                   if (apps.any((a) => a.status == "accepted")) {
                     apps = apps.where((a) => a.status == "accepted").toList();
                   }
+
+                  // 신청 상태도 정렬
+                  apps.sort((a, b) {
+                    int statusA = _getApplicationStatusPriority(a.status);
+                    int statusB = _getApplicationStatusPriority(b.status);
+                    return statusA.compareTo(statusB);
+                  });
 
                   return RequestCard(
                     request: req,
@@ -401,5 +434,21 @@ class _ReceivedApplicationsPageState extends State<ReceivedApplicationsPage> {
                 },
               ),
     );
+  }
+
+  // 신청 상태를 우선순위에 맞게 반환하는 함수
+  int _getApplicationStatusPriority(String status) {
+    switch (status) {
+      case "accepted":
+        return 1; // 매칭됨
+      case "pending":
+        return 2; // 대기중
+      case "rejected":
+        return 3; // 거절됨
+      case "completed":
+        return 4; // 완료됨
+      default:
+        return 5; // 기타 상태는 마지막에
+    }
   }
 }
