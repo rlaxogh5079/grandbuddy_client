@@ -85,12 +85,12 @@ Future<ProfileResponse> updateUser(
       "Content-Type": "application/json",
       "Authorization": "Bearer $accessToken",
     },
-    body: {
+    body: jsonEncode({
       "password": password,
       "nickname": nickname,
       "email": email,
       "address": address,
-    },
+    }),
   );
   String responseBody = utf8.decoder.convert(response.bodyBytes);
   return ProfileResponse.fromJson(json.decode(responseBody));
