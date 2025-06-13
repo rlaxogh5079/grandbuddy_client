@@ -86,8 +86,7 @@ class _UserMatchListPageState extends State<UserMatchListPage> {
         final seniorRes = await getUserByUuid(req.seniorUuid);
 
         // 매칭 상대방: 내가 senior면 youth, 내가 youth면 senior
-        String otherUuid =
-            (widget.user.role == "senior") ? m.youthUuid : req.seniorUuid;
+        String otherUuid = m.youthUuid;
         final userRes = await getUserByUuid(otherUuid);
 
         if (userRes.statusCode == 200 &&
@@ -171,6 +170,7 @@ class _UserMatchListPageState extends State<UserMatchListPage> {
   Widget build(BuildContext context) {
     final user = widget.user;
     return Scaffold(
+      backgroundColor: const Color(0xFFF9F8F5),
       appBar: AppBar(
         title: Text(
           "${user.nickname}님의 매칭 내역",

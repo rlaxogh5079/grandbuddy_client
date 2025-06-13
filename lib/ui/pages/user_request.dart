@@ -17,6 +17,7 @@ class UserRequestListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF9F8F5),
       appBar: AppBar(
         title: Text(
           "${user.nickname}님의 등록 요청글",
