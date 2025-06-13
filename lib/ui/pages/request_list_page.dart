@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grandbuddy_client/ui/pages/add_request.dart';
 import 'package:grandbuddy_client/ui/pages/request_detail.dart';
 import 'package:grandbuddy_client/utils/req/application.dart';
 import 'package:grandbuddy_client/utils/req/user.dart';
@@ -86,36 +87,58 @@ class _RequestListPageState extends State<RequestListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return isLoadingRequest
-        ? const Center(child: CircularProgressIndicator())
-        : requests.isEmpty
-        ? const Center(child: Text("요청 목록이 없습니다."))
-        : ListView.builder(
-          itemCount: requests.length,
-          itemBuilder: (context, idx) {
-            final req = requests[idx];
-            final senior = seniorMap[req.seniorUuid];
-            return RequestCard(
-              request: req,
-              senior: senior,
-              onTap: () async {
-                // detail에서 true 리턴받으면 새로고침
-                final changed = await Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (_) => RequestDetailPage(
-                          requestUuid: req.requestUuid,
-                          userRole: user!.role,
+    return Scaffold(
+      floatingActionButton:
+          user?.role == "senior"
+              ? FloatingActionButton(
+                onPressed: () async {
+                  final confirm = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddRequestPage(accessToken: accessToken),
+                    ),
+                  );
+
+                  if (confirm) {
+                    _refreshRequestList();
+                  }
+                },
+                backgroundColor: const Color(0xFF7BAFD4),
+                child: const Icon(Icons.add, color: Colors.white),
+              )
+              : null,
+      body:
+          isLoadingRequest
+              ? const Center(child: CircularProgressIndicator())
+              : requests.isEmpty
+              ? const Center(child: Text("요청 목록이 없습니다."))
+              : ListView.builder(
+                itemCount: requests.length,
+                itemBuilder: (context, idx) {
+                  final req = requests[idx];
+                  final senior = seniorMap[req.seniorUuid];
+                  return RequestCard(
+                    request: req,
+                    senior: senior,
+                    onTap: () async {
+                      // detail에서 true 리턴받으면 새로고침
+                      final changed = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => RequestDetailPage(
+                                requestUuid: req.requestUuid,
+                                userRole: user!.role,
+                              ),
                         ),
-                  ),
-                );
-                if (changed == true) {
-                  _loadRequestList();
-                }
-              },
-            );
-          },
-        );
+                      );
+                      if (changed == true) {
+                        _loadRequestList();
+                      }
+                    },
+                  );
+                },
+              ),
+    );
   }
 }
