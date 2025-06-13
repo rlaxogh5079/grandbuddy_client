@@ -216,6 +216,7 @@ class _MyTaskEditorState extends State<MyTaskEditor> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF9F8F5),
       floatingActionButton: FloatingActionButton(
         onPressed: _addTaskDialog,
         backgroundColor: const Color(0xFF7BAFD4),
